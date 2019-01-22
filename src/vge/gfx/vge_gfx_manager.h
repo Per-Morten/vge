@@ -1,5 +1,4 @@
 #include <vge_core.h>
-#include <vge_shader.h>
 #include <string>
 #include <glad/glad.h>
 #include <glm/glm.hpp>

@@ -1,5 +1,5 @@
 #include <vge_gfx_manager.h>
-#include <vge_gl_error.h>
+#include <vge_gfx_gl.h>
 #include <vge_imgui_windows.h>
 
 #include <algorithm>
@@ -12,14 +12,6 @@
 
 #include <imgui.h>
 #include <stb_image.h>
-
-/////////////////////////////////////////////////
-/// Predeclarations
-/////////////////////////////////////////////////
-namespace local
-{
-    const char* gl_enum_to_string(GLenum e);
-}
 
 /////////////////////////////////////////////////
 /// Mesh Related
@@ -200,8 +192,6 @@ vge::gfx_manager::get_texture_id(vge::gfx_manager::texture_handle handle)
 ///////////////////////////////////////////////////////////
 /// Shader Related
 ///////////////////////////////////////////////////////////
-
-// TODO: Split this information into different places that makes better use of cache etc.
 struct program
 {
     vge::gfx_manager::shader_handle handle;
@@ -401,7 +391,7 @@ namespace local::introspection
                 break;
 
             default:
-                ImGui::Text("%s has type %s, which isn't supported yet!", name, gl_enum_to_string(type));
+                ImGui::Text("%s has type %s, which isn't supported yet!", name, vge::gfx::gl_enum_to_string(type));
                 break;
         }
     }
@@ -419,7 +409,7 @@ vge::gfx_manager::draw_imgui_debug()
         {
             for (const auto& mesh : g_mesh_table)
             {
-                char buffer[256];
+                char buffer[32];
                 std::sprintf(buffer, "Handle: %d", mesh.handle);
                 if (ImGui::CollapsingHeader(buffer))
                 {
@@ -495,7 +485,7 @@ vge::gfx_manager::draw_imgui_debug()
         {
             for (const auto& program : g_program_table)
             {
-                char buffer[256];
+                char buffer[32];
                 std::sprintf(buffer, "Handle: %d", program.handle);
                 if (ImGui::CollapsingHeader(buffer))
                 {
@@ -509,19 +499,19 @@ vge::gfx_manager::draw_imgui_debug()
                         GLint max_name_length;
                         glGetProgramiv(program.program_id, GL_ACTIVE_UNIFORM_MAX_LENGTH, &max_name_length);
 
-                        static std::vector<char> name;
-                        name.resize(max_name_length);
+                        VGE_ASSERT(max_name_length < 32, "Currently don't support uniform names of more than 32 characters, it was %d", max_name_length);
+                        char name[32];
 
                         for (int i = 0; i < uniform_count; i++)
                         {
                             GLint ignored;
                             GLenum type;
-                            glGetActiveUniform(program.program_id, i, max_name_length, nullptr, &ignored, &type, name.data());
+                            glGetActiveUniform(program.program_id, i, max_name_length, nullptr, &ignored, &type, name);
 
-                            const auto location = glGetUniformLocation(program.program_id, name.data());
+                            const auto location = glGetUniformLocation(program.program_id, name);
                             ImGui::Indent();
                             ImGui::PushID(i);
-                            local::introspection::render_uniform_variable(program.program_id, type, name.data(), location);
+                            local::introspection::render_uniform_variable(program.program_id, type, name, location);
                             ImGui::PopID();
                             ImGui::Unindent();
                         }
@@ -534,9 +524,10 @@ vge::gfx_manager::draw_imgui_debug()
                         GLint shader_count;
                         glGetProgramiv(program.program_id, GL_ATTACHED_SHADERS, &shader_count);
 
-                        static std::vector<GLuint> attached_shaders;
-                        attached_shaders.resize(shader_count);
-                        glGetAttachedShaders(program.program_id, shader_count, nullptr, attached_shaders.data());
+                        VGE_ASSERT(shader_count <= 2, "We are currently not expecting more than 2 shaders per shader program, count: %d", shader_count);
+
+                        GLuint attached_shaders[2];
+                        glGetAttachedShaders(program.program_id, shader_count, nullptr, attached_shaders);
 
                         // TODO: Add in possibility for edit shader source!
                         for (const auto& shader_id : attached_shaders)
@@ -545,15 +536,11 @@ vge::gfx_manager::draw_imgui_debug()
                             VGE_ASSERT(shader, "Source for shader: %u is nullptr", shader_id);
 
                             ImGui::Indent();
-                            auto string_type = local::gl_enum_to_string(shader->type);
+                            auto string_type = gfx::gl_enum_to_string(shader->type);
                             ImGui::PushID(string_type);
                             if (ImGui::CollapsingHeader(string_type))
                             {
-                                auto y_size = std::min(ImGui::CalcTextSize(shader->source).y, ImGui::GetTextLineHeight() * 16);
-
-                                int success = 0;
-                                glGetShaderiv(shader_id, GL_COMPILE_STATUS, &success);
-                                ImGui::Text("%s", (success) ? "Compiled" : "Failed");
+                                auto y_size = std::min(ImGui::CalcTextSize(shader->source).y, ImGui::GetTextLineHeightWithSpacing() * 16);
 
                                 if (ImGui::Button("Compile"))
                                 {
@@ -563,24 +550,32 @@ vge::gfx_manager::draw_imgui_debug()
 
                                     int success = 0;
                                     glGetShaderiv(shader_id, GL_COMPILE_STATUS, &success);
-                                    if (!success)
+                                    if (success)
                                     {
-                                        GLchar info_log[512];
-                                        glGetShaderInfoLog(shader_id, 512, NULL, info_log);
-                                        VGE_ERROR("%s", info_log);
-                                    }
-
-                                    glLinkProgram(program.program_id);
-                                    glGetProgramiv(program.program_id, GL_LINK_STATUS, &success);
-                                    if (!success)
-                                    {
-                                        GLchar info_log[512];
-                                        glGetProgramInfoLog(program.program_id, 512, nullptr, info_log);
-                                        VGE_ERROR("%s", info_log);
+                                        glLinkProgram(program.program_id);
+                                        glGetProgramiv(program.program_id, GL_LINK_STATUS, &success);
+                                        if (!success)
+                                        {
+                                            GLchar info_log[512];
+                                            glGetProgramInfoLog(program.program_id, sizeof(info_log), nullptr, info_log);
+                                            VGE_ERROR("Linking error while live editing shader %s", info_log);
+                                        }
                                     }
                                 }
 
-                                ImGui::InputTextMultiline("", shader->source, sizeof(shader->source), ImVec2(-1.0f, y_size));
+                                ImGui::InputTextMultiline("##shader", shader->source, sizeof(shader->source), ImVec2(-1.0f, y_size));
+
+                                int success = 0;
+                                glGetShaderiv(shader_id, GL_COMPILE_STATUS, &success);
+                                ImGui::Text("Compilation status: %s", (success) ? "Compiled" : "Failed");
+
+                                GLchar info_log[512];
+                                GLsizei length = 0;
+                                glGetShaderInfoLog(shader_id, sizeof(info_log), &length, info_log);
+                                if (length)
+                                    ImGui::InputTextMultiline("##output", info_log, sizeof(info_log), ImVec2(-1.0f, 2 * ImGui::GetTextLineHeightWithSpacing()), ImGuiInputTextFlags_ReadOnly);
+
+
                             }
                             ImGui::PopID();
                             ImGui::Unindent();
@@ -596,7 +591,7 @@ vge::gfx_manager::draw_imgui_debug()
         {
             for (const auto& texture : g_texture_table)
             {
-                char buffer[512];
+                char buffer[128];
                 std::sprintf(buffer, "Handle: %d", texture.handle);
                 if (ImGui::CollapsingHeader(buffer))
                 {
@@ -622,154 +617,4 @@ vge::gfx_manager::draw_imgui_debug()
     ImGui::End();
 }
 
-namespace local
-{
-    const char* gl_enum_to_string(GLenum e)
-    {
-        #define TO_STRING_GENERATOR(x) case x: return #x; break;
-        switch (e)
-        {
-            // shader:
-            TO_STRING_GENERATOR(GL_VERTEX_SHADER);
-            TO_STRING_GENERATOR(GL_GEOMETRY_SHADER);
-            TO_STRING_GENERATOR(GL_FRAGMENT_SHADER);
 
-            // buffer usage:
-            TO_STRING_GENERATOR(GL_STREAM_DRAW);
-            TO_STRING_GENERATOR(GL_STREAM_READ);
-            TO_STRING_GENERATOR(GL_STREAM_COPY);
-            TO_STRING_GENERATOR(GL_STATIC_DRAW);
-            TO_STRING_GENERATOR(GL_STATIC_READ);
-            TO_STRING_GENERATOR(GL_STATIC_COPY);
-            TO_STRING_GENERATOR(GL_DYNAMIC_DRAW);
-            TO_STRING_GENERATOR(GL_DYNAMIC_READ);
-            TO_STRING_GENERATOR(GL_DYNAMIC_COPY);
-
-            // errors:
-            TO_STRING_GENERATOR(GL_NO_ERROR);
-            TO_STRING_GENERATOR(GL_INVALID_ENUM);
-            TO_STRING_GENERATOR(GL_INVALID_VALUE);
-            TO_STRING_GENERATOR(GL_INVALID_OPERATION);
-            TO_STRING_GENERATOR(GL_INVALID_FRAMEBUFFER_OPERATION);
-            TO_STRING_GENERATOR(GL_OUT_OF_MEMORY);
-            TO_STRING_GENERATOR(GL_STACK_UNDERFLOW);
-            TO_STRING_GENERATOR(GL_STACK_OVERFLOW);
-
-            // types:
-            TO_STRING_GENERATOR(GL_BYTE);
-            TO_STRING_GENERATOR(GL_UNSIGNED_BYTE);
-            TO_STRING_GENERATOR(GL_SHORT);
-            TO_STRING_GENERATOR(GL_UNSIGNED_SHORT);
-            TO_STRING_GENERATOR(GL_FLOAT);
-            TO_STRING_GENERATOR(GL_FLOAT_VEC2);
-            TO_STRING_GENERATOR(GL_FLOAT_VEC3);
-            TO_STRING_GENERATOR(GL_FLOAT_VEC4);
-            TO_STRING_GENERATOR(GL_DOUBLE);
-            TO_STRING_GENERATOR(GL_DOUBLE_VEC2);
-            TO_STRING_GENERATOR(GL_DOUBLE_VEC3);
-            TO_STRING_GENERATOR(GL_DOUBLE_VEC4);
-            TO_STRING_GENERATOR(GL_INT);
-            TO_STRING_GENERATOR(GL_INT_VEC2);
-            TO_STRING_GENERATOR(GL_INT_VEC3);
-            TO_STRING_GENERATOR(GL_INT_VEC4);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_VEC2);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_VEC3);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_VEC4);
-            TO_STRING_GENERATOR(GL_BOOL);
-            TO_STRING_GENERATOR(GL_BOOL_VEC2);
-            TO_STRING_GENERATOR(GL_BOOL_VEC3);
-            TO_STRING_GENERATOR(GL_BOOL_VEC4);
-            TO_STRING_GENERATOR(GL_FLOAT_MAT2);
-            TO_STRING_GENERATOR(GL_FLOAT_MAT3);
-            TO_STRING_GENERATOR(GL_FLOAT_MAT4);
-            TO_STRING_GENERATOR(GL_FLOAT_MAT2x3);
-            TO_STRING_GENERATOR(GL_FLOAT_MAT2x4);
-            TO_STRING_GENERATOR(GL_FLOAT_MAT3x2);
-            TO_STRING_GENERATOR(GL_FLOAT_MAT3x4);
-            TO_STRING_GENERATOR(GL_FLOAT_MAT4x2);
-            TO_STRING_GENERATOR(GL_FLOAT_MAT4x3);
-            TO_STRING_GENERATOR(GL_DOUBLE_MAT2);
-            TO_STRING_GENERATOR(GL_DOUBLE_MAT3);
-            TO_STRING_GENERATOR(GL_DOUBLE_MAT4);
-            TO_STRING_GENERATOR(GL_DOUBLE_MAT2x3);
-            TO_STRING_GENERATOR(GL_DOUBLE_MAT2x4);
-            TO_STRING_GENERATOR(GL_DOUBLE_MAT3x2);
-            TO_STRING_GENERATOR(GL_DOUBLE_MAT3x4);
-            TO_STRING_GENERATOR(GL_DOUBLE_MAT4x2);
-            TO_STRING_GENERATOR(GL_DOUBLE_MAT4x3);
-            TO_STRING_GENERATOR(GL_SAMPLER_1D);
-            TO_STRING_GENERATOR(GL_SAMPLER_2D);
-            TO_STRING_GENERATOR(GL_SAMPLER_3D);
-            TO_STRING_GENERATOR(GL_SAMPLER_CUBE);
-            TO_STRING_GENERATOR(GL_SAMPLER_1D_SHADOW);
-            TO_STRING_GENERATOR(GL_SAMPLER_2D_SHADOW);
-            TO_STRING_GENERATOR(GL_SAMPLER_1D_ARRAY);
-            TO_STRING_GENERATOR(GL_SAMPLER_2D_ARRAY);
-            TO_STRING_GENERATOR(GL_SAMPLER_1D_ARRAY_SHADOW);
-            TO_STRING_GENERATOR(GL_SAMPLER_2D_ARRAY_SHADOW);
-            TO_STRING_GENERATOR(GL_SAMPLER_2D_MULTISAMPLE);
-            TO_STRING_GENERATOR(GL_SAMPLER_2D_MULTISAMPLE_ARRAY);
-            TO_STRING_GENERATOR(GL_SAMPLER_CUBE_SHADOW);
-            TO_STRING_GENERATOR(GL_SAMPLER_BUFFER);
-            TO_STRING_GENERATOR(GL_SAMPLER_2D_RECT);
-            TO_STRING_GENERATOR(GL_SAMPLER_2D_RECT_SHADOW);
-            TO_STRING_GENERATOR(GL_INT_SAMPLER_1D);
-            TO_STRING_GENERATOR(GL_INT_SAMPLER_2D);
-            TO_STRING_GENERATOR(GL_INT_SAMPLER_3D);
-            TO_STRING_GENERATOR(GL_INT_SAMPLER_CUBE);
-            TO_STRING_GENERATOR(GL_INT_SAMPLER_1D_ARRAY);
-            TO_STRING_GENERATOR(GL_INT_SAMPLER_2D_ARRAY);
-            TO_STRING_GENERATOR(GL_INT_SAMPLER_2D_MULTISAMPLE);
-            TO_STRING_GENERATOR(GL_INT_SAMPLER_2D_MULTISAMPLE_ARRAY);
-            TO_STRING_GENERATOR(GL_INT_SAMPLER_BUFFER);
-            TO_STRING_GENERATOR(GL_INT_SAMPLER_2D_RECT);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_SAMPLER_1D);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_SAMPLER_2D);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_SAMPLER_3D);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_SAMPLER_CUBE);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_SAMPLER_1D_ARRAY);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_SAMPLER_2D_ARRAY);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE_ARRAY);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_SAMPLER_BUFFER);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_SAMPLER_2D_RECT);
-            TO_STRING_GENERATOR(GL_IMAGE_1D);
-            TO_STRING_GENERATOR(GL_IMAGE_2D);
-            TO_STRING_GENERATOR(GL_IMAGE_3D);
-            TO_STRING_GENERATOR(GL_IMAGE_2D_RECT);
-            TO_STRING_GENERATOR(GL_IMAGE_CUBE);
-            TO_STRING_GENERATOR(GL_IMAGE_BUFFER);
-            TO_STRING_GENERATOR(GL_IMAGE_1D_ARRAY);
-            TO_STRING_GENERATOR(GL_IMAGE_2D_ARRAY);
-            TO_STRING_GENERATOR(GL_IMAGE_2D_MULTISAMPLE);
-            TO_STRING_GENERATOR(GL_IMAGE_2D_MULTISAMPLE_ARRAY);
-            TO_STRING_GENERATOR(GL_INT_IMAGE_1D);
-            TO_STRING_GENERATOR(GL_INT_IMAGE_2D);
-            TO_STRING_GENERATOR(GL_INT_IMAGE_3D);
-            TO_STRING_GENERATOR(GL_INT_IMAGE_2D_RECT);
-            TO_STRING_GENERATOR(GL_INT_IMAGE_CUBE);
-            TO_STRING_GENERATOR(GL_INT_IMAGE_BUFFER);
-            TO_STRING_GENERATOR(GL_INT_IMAGE_1D_ARRAY);
-            TO_STRING_GENERATOR(GL_INT_IMAGE_2D_ARRAY);
-            TO_STRING_GENERATOR(GL_INT_IMAGE_2D_MULTISAMPLE);
-            TO_STRING_GENERATOR(GL_INT_IMAGE_2D_MULTISAMPLE_ARRAY);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_IMAGE_1D);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_IMAGE_2D);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_IMAGE_3D);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_IMAGE_2D_RECT);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_IMAGE_CUBE);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_IMAGE_BUFFER);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_IMAGE_1D_ARRAY);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_IMAGE_2D_ARRAY);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_IMAGE_2D_MULTISAMPLE);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_IMAGE_2D_MULTISAMPLE_ARRAY);
-            TO_STRING_GENERATOR(GL_UNSIGNED_INT_ATOMIC_COUNTER);
-        }
-
-        return "Unknown GL Enum";
-
-        #undef TO_STRING_GENERATOR
-
-    }
-}

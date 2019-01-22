@@ -78,10 +78,7 @@ if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Test")
 
     target_link_libraries(main
         # External
-        X11
-        GL
         glfw
-        # GLEW
 
         # Internal
         vge_core

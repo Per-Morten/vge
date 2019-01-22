@@ -1,15 +1,12 @@
 set(headers
-    vge_shader.h
-    vge_texture.h
     vge_gfx_manager.h
     vge_gfx.h
-    vge_gl_error.h
+    vge_gfx_gl.h
 )
 
 set(source
-    vge_shader.cpp
-    vge_texture.cpp
     vge_gfx_manager.cpp
+    vge_gfx_gl.cpp
 )
 
 add_library(vge_gfx
