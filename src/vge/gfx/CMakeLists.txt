@@ -25,7 +25,4 @@ target_link_libraries(vge_gfx
     vge_debug
     vge_core
     vge_third_party
-    X11
-    GL
-    GLEW
 )

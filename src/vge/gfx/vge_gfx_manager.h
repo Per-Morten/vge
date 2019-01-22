@@ -1,7 +1,7 @@
 #include <vge_core.h>
 #include <vge_shader.h>
 #include <string>
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <glm/glm.hpp>
 
 /// TODO: Refactor into vge::gfx namespace

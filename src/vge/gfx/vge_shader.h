@@ -1,6 +1,6 @@
 #pragma once
 #include <vge_core.h>
-#include <GL/glew.h>
+#include <glad/glad.h>
 
 namespace vge
 {

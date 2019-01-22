@@ -5,6 +5,9 @@ set(headers
 
     # STB
     stb/stb_image.h
+
+    # GLAD
+    glad/glad.h
 )
 
 set(source
@@ -18,6 +21,9 @@ set(source
 
     # STB
     stb/stb_image.cpp
+
+    # GLAD
+    glad/glad.c
 )
 
 add_library(vge_third_party
@@ -32,4 +38,9 @@ target_include_directories(vge_third_party PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/stb"
 )
 
-add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLEW)
+add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD)
+
+target_link_libraries(vge_third_party
+    dl
+)
+

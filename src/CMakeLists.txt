@@ -81,7 +81,7 @@ if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Test")
         X11
         GL
         glfw
-        GLEW
+        # GLEW
 
         # Internal
         vge_core

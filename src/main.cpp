@@ -8,9 +8,9 @@
 #include <vge_profiler.h>
 #include <vge_gfx.h>
 
-#include <GL/glew.h>
-#include <glm/glm.hpp>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -42,7 +42,7 @@ main(int argc, char** argv)
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
@@ -58,12 +58,10 @@ main(int argc, char** argv)
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
     glfwSwapInterval(1);
 
-    glewExperimental = GL_TRUE;
-
-    if (glewInit() != GLEW_OK)
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         glfwTerminate();
-        VGE_ERROR("Failed to init GLEW");
+        VGE_ERROR("Failed to initialize GLAD");
     }
 
     glViewport(0, 0, 800, 640);
