@@ -4,7 +4,7 @@
 void*
 vge::malloc_allocator::allocate(int size) VGE_NOEXCEPT
 {
-    VGE_DEBUG("%s: Allocating: %d", m_name, size);
+    //VGE_DEBUG("%s: Allocating: %d", m_name, size);
     return std::malloc(size);
 }
 

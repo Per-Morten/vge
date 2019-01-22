@@ -25,9 +25,9 @@ vge_log(FILE* file,
     va_end(args2);
 
     #ifdef WIN32
-    const char* filename = strrchr(filepath, '\\');
+    const char* filename = std::strrchr(filepath, '\\');
     #else
-    const char* filename = strrchr(filepath, '/');
+    const char* filename = std::strrchr(filepath, '/');
     #endif
     ++filename;
 

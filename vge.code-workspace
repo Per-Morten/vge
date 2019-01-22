@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": ".",
+			"name": "vge"
+		}
+	],
+    "settings": {
+        "C_Cpp.errorSquiggles": "Enabled"
+    }
+}

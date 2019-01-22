@@ -1,7 +1,9 @@
 subdirs(
-    core
-    memory
     algorithm
     container
+    core
+    debug
+    gfx
+    memory
 )
 

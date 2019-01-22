@@ -26,9 +26,9 @@ set(VGE_STANDARD_FLAGS "${VGE_STANDARD_FLAGS}   \
 
 set(VGE_DEBUG_FLAGS    "${VGE_DEBUG_FLAGS}      \
                         -g3                     \
-                        -ggdb                   \
                         -O0                     \
                         -DVGE_ASSERT_TERMINATE  \
+                        -ggdb	                \
                        "
 )
 
@@ -55,6 +55,8 @@ set(CMAKE_CXX_FLAGS_RELEASE
      ${VGE_RELEASE_FLAGS}           \
     "
 )
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 subdirs(
     vge
@@ -85,8 +87,9 @@ if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Test")
         vge_core
         vge_memory
         vge_algorithm
+        vge_debug
         vge_third_party
-
+        vge_gfx
     )
 
     set_target_properties(main PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "$ENV{VGE_ROOT_DIR}")
