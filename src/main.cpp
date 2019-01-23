@@ -39,6 +39,8 @@ main(int argc, char** argv)
         VGE_ERROR("Failed to init GLFW");
     }
 
+    VGE_DEBUG("Debug Message");
+
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -167,6 +169,8 @@ main(int argc, char** argv)
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
+        VGE_DEBUG("Something");
+
         // New Frame
         glfwPollEvents();
         ImGui_ImplOpenGL3_NewFrame();
@@ -186,6 +190,7 @@ main(int argc, char** argv)
         //vge::draw_profiler();
         manager.draw_imgui_debug();
         ImGui::ShowDemoWindow();
+        vge_log_draw_imgui_debug();
 
         // Rendering
         ImGui::Render();

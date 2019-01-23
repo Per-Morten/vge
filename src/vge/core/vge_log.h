@@ -79,6 +79,15 @@ vge_log(FILE* file,
        const char* fmt,
        ...);
 
+void
+vge_log_imgui(const char* type,
+              const char* color,
+              const char* filepath,
+              const char* func,
+              const int line,
+              const char* fmt,
+              ...);
+
 ///////////////////////////////////////////////////////////
 /// \ingroup vge_core
 ///
@@ -128,7 +137,8 @@ vge_log(stderr, "WARN", VGE_COLOR_FG_YELLOW, __FILE__, __func__, __LINE__, fmt, 
 ///     Can be called concurrently.
 ///////////////////////////////////////////////////////////
 #define VGE_DEBUG(fmt, ...) \
-vge_log(stdout, "DEBUG", VGE_COLOR_FG_CYAN, __FILE__, __func__, __LINE__, fmt, ##__VA_ARGS__);
+vge_log(stdout, "DEBUG", VGE_COLOR_FG_CYAN, __FILE__, __func__, __LINE__, fmt, ##__VA_ARGS__); \
+vge_log_imgui("DEBUG", VGE_COLOR_FG_CYAN, __FILE__, __func__, __LINE__, fmt, ##__VA_ARGS__); \
 
 ///////////////////////////////////////////////////////////
 /// \ingroup vge_core
@@ -141,3 +151,7 @@ vge_log(stdout, "DEBUG", VGE_COLOR_FG_CYAN, __FILE__, __func__, __LINE__, fmt, #
 ///////////////////////////////////////////////////////////
 #define VGE_INFO(fmt, ...) \
 vge_log(stdout, "INFO", VGE_COLOR_FG_WHITE, __FILE__, __func__, __LINE__, fmt, ##__VA_ARGS__);
+
+
+void
+vge_log_draw_imgui_debug();
