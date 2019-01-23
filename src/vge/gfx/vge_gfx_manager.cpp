@@ -529,7 +529,6 @@ vge::gfx_manager::draw_imgui_debug()
                         GLuint attached_shaders[2];
                         glGetAttachedShaders(program.program_id, shader_count, nullptr, attached_shaders);
 
-                        // TODO: Add in possibility for edit shader source!
                         for (const auto& shader_id : attached_shaders)
                         {
                             auto shader = local::shader::get_shader_source(shader_id);
@@ -556,6 +555,7 @@ vge::gfx_manager::draw_imgui_debug()
                                         glGetProgramiv(program.program_id, GL_LINK_STATUS, &success);
                                         if (!success)
                                         {
+                                            // Should probably also get the log length here, so I know how much space I need
                                             GLchar info_log[512];
                                             glGetProgramInfoLog(program.program_id, sizeof(info_log), nullptr, info_log);
                                             VGE_ERROR("Linking error while live editing shader %s", info_log);
