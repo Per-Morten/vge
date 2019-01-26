@@ -7,6 +7,7 @@
 #include <vge_memory.h>
 #include <vge_profiler.h>
 #include <vge_gfx.h>
+#include <vge_debug.h>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -33,13 +34,13 @@ process_input(GLFWwindow* window)
 int
 main(int argc, char** argv)
 {
+    vge::initialize_logger();
+
     if (!glfwInit())
     {
         glfwTerminate();
         VGE_ERROR("Failed to init GLFW");
     }
-
-    VGE_DEBUG("Debug Message");
 
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
@@ -78,6 +79,8 @@ main(int argc, char** argv)
     {
         return ((vge::malloc_allocator*)allocator)->deallocate(ptr);
     };
+
+    VGE_DEBUG("%p", &imgui_dealloc);
     vge::malloc_allocator imgui_allocator("imgui");
     ImGui::SetAllocatorFunctions(imgui_alloc, imgui_dealloc, &imgui_allocator);
 
@@ -86,90 +89,68 @@ main(int argc, char** argv)
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 450");
 
+    vge::init_imgui_style();
+
     // Setup subsystems
     vge::malloc_allocator profiler_allocator("profiler");
     vge::initialize_profiler(profiler_allocator);
 
     // Toying with OpenGL
-    float vertices[] = {
-        0.5f,  0.5f, 0.0f,  // top right
-        0.5f, -0.5f, 0.0f,  // bottom right
-        -0.5f, -0.5f, 0.0f,  // bottom left
-        -0.5f,  0.5f, 0.0f   // top left
-    };
-
     unsigned int indices[] = {
         0, 1, 3,
         1, 2, 3,
     };
 
-    float tex_coords[] = {
-        1.0f, 1.0f,
-        1.0f, 0.0f,
-        0.0f, 0.0f,
-        0.0f, 1.0f,
-    };
-
-    glm::vec3 vertices2[] = {
+    glm::vec3 vertices[] = {
         {0.5f,  0.5f, 0.0f},  // top right
         {0.5f, -0.5f, 0.0f},  // bottom right
         {-0.5f, -0.5f, 0.0f},  // bottom left
         {-0.5f,  0.5f, 0.0f},  // top left
     };
 
-    glm::vec2 tex_coords2[] = {
+    glm::vec2 tex_coords[] = {
         {1.0f, 1.0f},
         {1.0f, 0.0f},
         {0.0f, 0.0f},
         {0.0f, 1.0f},
     };
 
-    auto manager = vge::gfx_manager();
     vge::gfx_manager::mesh_data data;
     data.name = "test";
-    data.vertices = vertices2;
-    data.uv0 = tex_coords2;
+    data.vertices = vertices;
+    data.uv0 = tex_coords;
     data.triangles = indices;
     data.triangle_count = 6;
     data.vertex_count = 4;
 
-    auto handle = manager.create_mesh();
-    manager.set_mesh(handle, data);
-    auto shader_handle = manager.create_shader();
-    manager.attach_shader(shader_handle, "resources/shaders/basic_shader.vs", GL_VERTEX_SHADER);
-    manager.attach_shader(shader_handle, "resources/shaders/basic_shader.fs", GL_FRAGMENT_SHADER);
-    manager.compile_and_link_shader(shader_handle);
-    auto shader_id = manager.get_shader_id(shader_handle);
+    auto handle = vge::gfx_manager::create_mesh();
+    vge::gfx_manager::set_mesh(handle, data);
+    auto shader_handle = vge::gfx_manager::create_shader();
+    vge::gfx_manager::attach_shader(shader_handle, "resources/shaders/basic_shader.vs", GL_VERTEX_SHADER);
+    vge::gfx_manager::attach_shader(shader_handle, "resources/shaders/basic_shader.fs", GL_FRAGMENT_SHADER);
+    vge::gfx_manager::compile_and_link_shader(shader_handle);
+    auto shader_id = vge::gfx_manager::get_shader_id(shader_handle);
 
     glUseProgram(shader_id);
-    //auto texture1 = vge::texture("resources/textures/container.jpg");
-    //auto texture2 = vge::texture("resources/textures/awesomeface.png");
 
-    auto tex_handle1 = manager.create_texture();
-    manager.load_texture(tex_handle1, "resources/textures/container.jpg");
-    auto tex_handle2 = manager.create_texture();
-    manager.load_texture(tex_handle2, "resources/textures/awesomeface.png");
+    auto tex_handle1 = vge::gfx_manager::create_texture();
+    vge::gfx_manager::load_texture(tex_handle1, "resources/textures/container.jpg");
+    auto tex_handle2 = vge::gfx_manager::create_texture();
+    vge::gfx_manager::load_texture(tex_handle2, "resources/textures/awesomeface.png");
 
-    // Draw Wireframe
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-    // Regular drawing:
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-    //shader.bind();
     glUniform1i(glGetUniformLocation(shader_id, "u_texture0"), 0);
     glUniform1i(glGetUniformLocation(shader_id, "u_texture1"), 1);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, manager.get_texture_id(tex_handle1));
+    glBindTexture(GL_TEXTURE_2D, vge::gfx_manager::get_texture_id(tex_handle1));
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, manager.get_texture_id(tex_handle2));
-    // texture1.bind(GL_TEXTURE0);
-    // texture2.bind(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, vge::gfx_manager::get_texture_id(tex_handle2));
 
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
-        VGE_DEBUG("Something");
+        VGE_DEBUG("Debug %d", ImGui::GetFrameCount());
+        VGE_INFO("Info %d", ImGui::GetFrameCount());
+        VGE_WARN("Warn %d", ImGui::GetFrameCount());
 
         // New Frame
         glfwPollEvents();
@@ -179,23 +160,20 @@ main(int argc, char** argv)
 
         // Clearing
         const auto clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-        //const auto clear_color = ImVec4(0.0f, 0.0f, 0.0f, 1.00f);
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Drawing
-        manager.draw_mesh(handle);
+        vge::gfx_manager::draw_mesh(handle);
 
         // Draw subsystems
-        //vge::draw_profiler();
-        manager.draw_imgui_debug();
+        vge::draw_debug_windows();
+
         ImGui::ShowDemoWindow();
-        vge_log_draw_imgui_debug();
 
         // Rendering
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        //glfwMakeContextCurrent(window);
         glfwSwapBuffers(window);
     }
 

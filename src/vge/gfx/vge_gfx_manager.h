@@ -7,7 +7,7 @@
 namespace vge
 {
     // Should just be namespace, not a "class"
-    struct gfx_manager
+    namespace gfx_manager
     {
         struct mesh_data
         {

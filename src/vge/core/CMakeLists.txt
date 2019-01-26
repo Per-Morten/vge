@@ -1,12 +1,10 @@
 set(headers
-    vge_assert.h
     vge_attributes.h
     vge_core.h
-    vge_log.h
 )
 
 set(source
-    vge_log.cpp
+
 )
 
 add_library(vge_core

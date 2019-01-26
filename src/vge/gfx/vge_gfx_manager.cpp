@@ -1,6 +1,6 @@
 #include <vge_gfx_manager.h>
 #include <vge_gfx_gl.h>
-#include <vge_imgui_windows.h>
+#include <vge_debug.h>
 
 #include <algorithm>
 #include <fstream>
@@ -402,7 +402,6 @@ namespace local::introspection
 void
 vge::gfx_manager::draw_imgui_debug()
 {
-    ImGui::Begin(vge::imgui_windows::graphics_debug);
     if (ImGui::BeginTabBar("GraphicsTab"))
     {
         if (ImGui::BeginTabItem("Meshes"))
@@ -609,12 +608,19 @@ vge::gfx_manager::draw_imgui_debug()
             ImGui::EndTabItem();
         }
 
+        if (ImGui::BeginTabItem("Settings"))
+        {
+            static bool mode = false;
+            if (ImGui::Checkbox("Draw polygon mode", &mode))
+                glPolygonMode(GL_FRONT_AND_BACK, (mode) ? GL_LINE : GL_FILL);
+
+            ImGui::EndTabItem();
+        }
+
         // TODO: Look into: http://docs.gl/gl4/glGetDebugMessageLog
 
         ImGui::EndTabBar();
     }
-
-    ImGui::End();
 }
 
 

@@ -1,5 +1,7 @@
+#pragma once
 #include <vge_core.h>
 #include <vge_allocator.h>
+#include <vge_log.h>
 
 #include <chrono>
 #include <cstring>

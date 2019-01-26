@@ -20,4 +20,5 @@ target_include_directories(vge_memory PUBLIC
 target_link_libraries(vge_memory
     vge_core
     vge_algorithm
+    vge_debug
 )

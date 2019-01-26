@@ -1,4 +1,9 @@
 #pragma once
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+
 // Setup checks for builtin features, attributes and extensions.
 // See: https://clang.llvm.org/docs/LanguageExtensions.html
 
@@ -124,4 +129,14 @@
 #define VGE_UNLIKELY(x) (x)
 #endif
 
+
+#if defined(VGE_ASSERT_TERMINATE)
+#define VGE_NOEXCEPT noexcept
+#elif defined(VGE_ASSERT_REPORT)
+#define VGE_NOEXCEPT noexcept
+#elif defined(VGE_ASSERT_THROW)
+#define VGE_NOEXCEPT
+#else
+#define VGE_NOEXCEPT noexcept
+#endif
 

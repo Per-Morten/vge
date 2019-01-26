@@ -1,9 +1,14 @@
 set(headers
+    vge_assert.h
+    vge_debug.h
+    vge_imgui.h
+    vge_log.h
     vge_profiler.h
-    vge_imgui_windows.h
 )
 
 set(source
+    vge_imgui.cpp
+    vge_log.cpp
     vge_profiler.cpp
 )
 
@@ -20,4 +25,5 @@ target_link_libraries(vge_debug
     vge_core
     vge_memory
     vge_third_party
+    vge_gfx
 )

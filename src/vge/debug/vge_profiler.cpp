@@ -2,6 +2,7 @@
 
 #include <vge_profiler.h>
 
+
 void
 vge::initialize_profiler(vge::allocator& allocator) VGE_NOEXCEPT
 {
