@@ -58,7 +58,7 @@ vge::gfx_manager::set_mesh(vge::gfx_manager::mesh_handle handle,
 
     if (itr == g_mesh_table.end())
     {
-        VGE_DEBUG("Handle %d not found", handle);
+        VGE_WARN("Handle %d not found", handle);
         return;
     }
 
@@ -242,7 +242,7 @@ namespace local::shader
         buffer[file_len - 1] = '\0';
 
         if (auto res = (int)std::fread(buffer, sizeof(char), file_len, file); res < file_len - 1)
-            VGE_ERROR("Could not read entire shader, res: %d vs %d", res, file_len);
+            VGE_WARN("Could not read entire shader, res: %d vs %d", res, file_len);
 
         std::fclose(file);
     }
@@ -260,7 +260,7 @@ namespace local::shader
         {
             GLchar info_log[512];
             glGetShaderInfoLog(shader, 512, NULL, info_log);
-            VGE_ERROR("%s", info_log);
+            VGE_WARN("%s", info_log);
         }
         return shader;
     }
@@ -334,7 +334,7 @@ vge::gfx_manager::compile_and_link_shader(shader_handle handle)
     {
         GLchar info_log[512];
         glGetProgramInfoLog(program->program_id, 512, nullptr, info_log);
-        VGE_ERROR("%s", info_log);
+        VGE_WARN("%s", info_log);
     }
 }
 
@@ -359,10 +359,9 @@ namespace local::introspection
         ImGui::Text(#gltype" %s", name);                                                   \
         ImGui::SameLine();                                                                 \
         cputype value[count];                                                              \
-        cputype* ptr = &value[0];                                                          \
-        glread(program, location, ptr);                                                    \
-        if (imguifunc("", ptr))                                                            \
-            glwrite(program, location, 1, ptr);                                            \
+        glread(program, location, &value[0]);                                              \
+        if (imguifunc("", &value[0]))                                                      \
+            glwrite(program, location, 1, &value[0]);                                      \
     }
 
     static void
@@ -379,11 +378,27 @@ namespace local::introspection
                 break;
 
             case GL_FLOAT_VEC3:
-                VARIABLE_RENDER_GENERATOR(float, 3, GL_FLOAT_VEC3, glGetUniformfv, glProgramUniform3fv, ImGui::DragFloat3);
+            {
+                static bool is_color = false;
+                ImGui::Checkbox("##is_color", &is_color); ImGui::SameLine();
+                ImGui::Text("GL_FLOAT_VEC3 %s", name); ImGui::SameLine();
+                float value[3];
+                glGetUniformfv(program, location, &value[0]);
+                if ((!is_color && ImGui::DragFloat3("", &value[0])) || (is_color && ImGui::ColorEdit3("Color", &value[0], ImGuiColorEditFlags_NoLabel)))
+                    glProgramUniform3fv(program, location, 1, &value[0]);
+            }
                 break;
 
             case GL_FLOAT_VEC4:
-                VARIABLE_RENDER_GENERATOR(float, 4, GL_FLOAT_VEC4, glGetUniformfv, glProgramUniform4fv, ImGui::DragFloat4);
+            {
+                static bool is_color = false;
+                ImGui::Checkbox("##is_color", &is_color); ImGui::SameLine();
+                ImGui::Text("GL_FLOAT_VEC4 %s", name); ImGui::SameLine();
+                float value[4];
+                glGetUniformfv(program, location, &value[0]);
+                if ((!is_color && ImGui::DragFloat4("", &value[0])) || (is_color && ImGui::ColorEdit4("Color", &value[0], ImGuiColorEditFlags_NoLabel | ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreviewHalf)))
+                    glProgramUniform4fv(program, location, 1, &value[0]);
+            }
                 break;
 
             case GL_SAMPLER_2D:
@@ -402,6 +417,8 @@ namespace local::introspection
 void
 vge::gfx_manager::draw_imgui_debug()
 {
+
+
     if (ImGui::BeginTabBar("GraphicsTab"))
     {
         if (ImGui::BeginTabItem("Meshes"))
@@ -430,6 +447,7 @@ vge::gfx_manager::draw_imgui_debug()
                     if (ImGui::TreeNode("Data"))
                     {
                         // TODO: Fix logic here, so we don't always use 200(?)
+                        ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 1.0f);
                         ImGui::BeginChild("child", ImVec2(0, 200), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
                         ImGui::Columns(4);
                         ImGui::Text("triangles");
@@ -474,6 +492,7 @@ vge::gfx_manager::draw_imgui_debug()
                         }
                         ImGui::EndChild();
                         ImGui::TreePop();
+                        ImGui::PopStyleVar();
                     }
                 }
             }
@@ -510,7 +529,9 @@ vge::gfx_manager::draw_imgui_debug()
                             const auto location = glGetUniformLocation(program.program_id, name);
                             ImGui::Indent();
                             ImGui::PushID(i);
+                            ImGui::PushItemWidth(-1.0f);
                             local::introspection::render_uniform_variable(program.program_id, type, name, location);
+                            ImGui::PopItemWidth();
                             ImGui::PopID();
                             ImGui::Unindent();
                         }
@@ -611,7 +632,7 @@ vge::gfx_manager::draw_imgui_debug()
         if (ImGui::BeginTabItem("Settings"))
         {
             static bool mode = false;
-            if (ImGui::Checkbox("Draw polygon mode", &mode))
+            if (ImGui::Checkbox("Draw wireframe mode", &mode))
                 glPolygonMode(GL_FRONT_AND_BACK, (mode) ? GL_LINE : GL_FILL);
 
             ImGui::EndTabItem();

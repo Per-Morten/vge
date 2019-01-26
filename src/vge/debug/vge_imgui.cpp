@@ -12,6 +12,7 @@ vge::init_imgui_style()
     ImGui::PushStyleVar(ImGuiStyleVar_TabRounding, 0);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.06f, 0.06f, 0.06f, 0.725f));
 }
 
 void

@@ -87,7 +87,7 @@ main(int argc, char** argv)
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 450");
+    ImGui_ImplOpenGL3_Init("#version 460");
 
     vge::init_imgui_style();
 
@@ -148,10 +148,6 @@ main(int argc, char** argv)
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
-        VGE_DEBUG("Debug %d", ImGui::GetFrameCount());
-        VGE_INFO("Info %d", ImGui::GetFrameCount());
-        VGE_WARN("Warn %d", ImGui::GetFrameCount());
-
         // New Frame
         glfwPollEvents();
         ImGui_ImplOpenGL3_NewFrame();
