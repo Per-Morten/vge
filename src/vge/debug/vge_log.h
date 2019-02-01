@@ -90,7 +90,8 @@ vge_log("INFO", __FILE__, __func__, __LINE__, fmt, ##__VA_ARGS__);
 
 namespace vge
 {
-    void initialize_logger();
+    void init_logger();
+    void init_gl_logger();
 
     void draw_log_overlay(int lines_count);
 

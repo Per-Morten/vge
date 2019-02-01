@@ -34,7 +34,7 @@ process_input(GLFWwindow* window)
 int
 main(int argc, char** argv)
 {
-    vge::initialize_logger();
+    vge::init_logger();
 
     if (!glfwInit())
     {
@@ -48,6 +48,7 @@ main(int argc, char** argv)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // To make MacOS happy; should not be needed
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 
     GLFWwindow* window = glfwCreateWindow(800, 640, "vge", nullptr, nullptr);
     glfwMakeContextCurrent(window);
@@ -90,6 +91,7 @@ main(int argc, char** argv)
     ImGui_ImplOpenGL3_Init("#version 460");
 
     vge::init_imgui_style();
+    vge::init_gl_logger();
 
     // Setup subsystems
     vge::malloc_allocator profiler_allocator("profiler");

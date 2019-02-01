@@ -1,10 +1,14 @@
 #include <vge_log.h>
+#include <vge_assert.h>
 #include <imgui.h>
 #include <algorithm>
 
 #include <signal.h>
 #include <execinfo.h>
 #include <unistd.h>
+
+#include <glad/glad.h>
+#include <vge_gfx_gl.h>
 
 static constexpr int log_table_size = 1024;
 static constexpr int log_message_size = 1024;
@@ -48,9 +52,8 @@ vge_log(const char* type,
                  line, buffer);
 }
 
-
 void
-vge::initialize_logger()
+vge::init_logger()
 {
     auto handler = [](int sig, siginfo_t* si, void* unused)
     {
@@ -86,6 +89,62 @@ vge::initialize_logger()
         VGE_ERROR("Couldn't set up SIGILL handler");
 }
 
+/////////////////////////////////////////////////////////////////////
+/// GL Logging
+/////////////////////////////////////////////////////////////////////
+struct gl_debug_msg
+{
+    GLenum source;
+    GLenum type;
+    GLuint id;
+    GLenum severity;
+    char message[log_message_size];
+    // Should we also store backtrace?
+};
+
+gl_debug_msg g_gl_table[log_table_size];
+int g_gl_idx;
+
+static void APIENTRY
+gl_debug_callback(GLenum source,
+                  GLenum type,
+                  GLuint id,
+                  GLenum severity,
+                  GLsizei length,
+                  const GLchar *message,
+                  const void *userParam)
+{
+    VGE_ASSERT((size_t)length < sizeof(gl_debug_msg::message), "Message: %s, does not fit in buffer", message);
+
+    if (id == 131169 || id == 131185 || id == 131218 || id == 131204)
+        return;
+
+    auto buff = &g_gl_table[g_gl_idx];
+    g_gl_idx = (g_gl_idx + 1) % log_table_size;
+    buff->id = id;
+    buff->type = type;
+    buff->severity = severity;
+    buff->source = source;
+    std::strcpy(buff->message, message);
+}
+
+void
+vge::init_gl_logger()
+{
+    GLint flags; glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+    if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
+    {
+        // initialize debug output
+        glEnable(GL_DEBUG_OUTPUT);
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+        glDebugMessageCallback(gl_debug_callback, nullptr);
+        glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+    }
+}
+
+/////////////////////////////////////////////////////////////////////
+/// Visualization
+/////////////////////////////////////////////////////////////////////
 void
 vge::draw_log_overlay(int lines_count)
 {
@@ -118,33 +177,86 @@ vge::draw_log_overlay(int lines_count)
 void
 vge::draw_log_window()
 {
-    static bool bound_to_bottom = true;
-    ImGui::Checkbox("Bind to bottom", &bound_to_bottom); ImGui::SameLine();
-    bool scroll_to_top = ImGui::SmallButton("Scroll to top");
-    bound_to_bottom = (bound_to_bottom && !scroll_to_top);
-
-    ImGui::BeginChild(ImGui::GetID("extended_logging"), ImVec2(0, 0), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
-
-    int begin = g_log_idx;
-
-    for (int i = 0; i < log_table_size; i++, begin = (begin + 1) % log_table_size)
+    if (ImGui::BeginTabBar("LoggingTab"))
     {
-        if (g_log_table[begin][0] == '\0')
-            continue;
+        if (ImGui::BeginTabItem("CPU"))
+        {
+            static bool bound_to_bottom = true;
+            ImGui::Checkbox("Bind to bottom", &bound_to_bottom); ImGui::SameLine();
+            bool scroll_to_top = ImGui::SmallButton("Scroll to top");
+            bound_to_bottom = (bound_to_bottom && !scroll_to_top);
 
-        if (!std::strncmp(g_log_table[begin], "[DEBUG", sizeof("[DEBUG") - 1)) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.000f, 0.700f, 1.000f, 1.0f));
-        else if (!std::strncmp(g_log_table[begin], "[INFO", sizeof("[INFO") - 1))   ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-        else if (!std::strncmp(g_log_table[begin], "[WARN", sizeof("[WARN") - 1))   ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.800f, 0.500f, 0.160f, 1.0f));
-        else if (!std::strncmp(g_log_table[begin], "[ERROR", sizeof("[ERROR") - 1)) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.800f, 0.160f, 0.160f, 1.0f));
-        else VGE_ERROR("Message: %s, is not correct format", g_log_table[begin]);
+            ImGui::BeginChild(ImGui::GetID("extended_logging"), ImVec2(0, 0), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
-        ImGui::TextUnformatted(g_log_table[begin]);
-        ImGui::PopStyleColor();
+            int begin = g_log_idx;
+
+            for (int i = 0; i < log_table_size; i++, begin = (begin + 1) % log_table_size)
+            {
+                if (g_log_table[begin][0] == '\0')
+                    continue;
+
+                if (!std::strncmp(g_log_table[begin], "[DEBUG", sizeof("[DEBUG") - 1)) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.000f, 0.700f, 1.000f, 1.0f));
+                else if (!std::strncmp(g_log_table[begin], "[INFO", sizeof("[INFO") - 1))   ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+                else if (!std::strncmp(g_log_table[begin], "[WARN", sizeof("[WARN") - 1))   ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.800f, 0.500f, 0.160f, 1.0f));
+                else if (!std::strncmp(g_log_table[begin], "[ERROR", sizeof("[ERROR") - 1)) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.800f, 0.160f, 0.160f, 1.0f));
+                else VGE_ERROR("Message: %s, is not correct format", g_log_table[begin]);
+
+                ImGui::TextUnformatted(g_log_table[begin]);
+                ImGui::PopStyleColor();
+            }
+
+            if (bound_to_bottom) ImGui::SetScrollY(ImGui::GetScrollMaxY());
+            else if (scroll_to_top) ImGui::SetScrollY(0.0f);
+
+            ImGui::EndChild();
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Graphics"))
+        {
+            static bool bound_to_bottom = true;
+            ImGui::Checkbox("Bind to bottom", &bound_to_bottom); ImGui::SameLine();
+            bool scroll_to_top = ImGui::SmallButton("Scroll to top");
+            bound_to_bottom = (bound_to_bottom && !scroll_to_top);
+
+            ImGui::BeginChild(ImGui::GetID("extended_logging"), ImVec2(0, 0), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+
+            int begin = g_gl_idx;
+
+            for (int i = 0; i < log_table_size; i++, begin = (begin + 1) % log_table_size)
+            {
+                auto msg = &g_gl_table[begin];
+                if (msg->id == 0)
+                    continue;
+
+                if (msg->type == GL_DEBUG_TYPE_ERROR || msg->type == GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR
+                 || msg->type == GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR || msg->type == GL_DEBUG_TYPE_PORTABILITY
+                 || msg->severity == GL_DEBUG_SEVERITY_HIGH)
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.800f, 0.160f, 0.160f, 1.0f));
+                else if (msg->type == GL_DEBUG_TYPE_PERFORMANCE || msg->severity == GL_DEBUG_SEVERITY_MEDIUM)
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.800f, 0.500f, 0.160f, 1.0f));
+                else if (msg->severity == GL_DEBUG_SEVERITY_LOW)
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+                else
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.000f, 0.700f, 1.000f, 1.0f));
+
+                ImGui::TextWrapped("[%s]: %s %s: %s",
+                            gfx::gl_enum_to_string(msg->source),
+                            gfx::gl_enum_to_string(msg->type),
+                            gfx::gl_enum_to_string(msg->severity),
+                            msg->message);
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("msg id: %d", msg->id);
+
+                ImGui::PopStyleColor();
+            }
+
+            if (bound_to_bottom) ImGui::SetScrollY(ImGui::GetScrollMaxY());
+            else if (scroll_to_top) ImGui::SetScrollY(0.0f);
+
+            ImGui::EndChild();
+            ImGui::EndTabItem();
+        }
     }
-
-    if (bound_to_bottom) ImGui::SetScrollY(ImGui::GetScrollMaxY());
-    else if (scroll_to_top) ImGui::SetScrollY(0.0f);
-
-
-    ImGui::EndChild();
+    ImGui::EndTabBar();
 }
