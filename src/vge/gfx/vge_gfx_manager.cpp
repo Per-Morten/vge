@@ -638,48 +638,6 @@ vge::gfx_manager::draw_imgui_debug()
             ImGui::EndTabItem();
         }
 
-        // Do callbacks instead, and put it into the logging system
-        if (ImGui::BeginTabItem("OpenGL Errors"))
-        {
-            constexpr int max_msgs = 20;
-            char msg_buffer[2048];
-            GLenum sources[max_msgs];
-            GLenum types[max_msgs];
-            GLuint ids[max_msgs];
-            GLenum severities[max_msgs];
-            GLsizei lengths[max_msgs];
-            int msgs = glGetDebugMessageLog(max_msgs, sizeof(msg_buffer), sources, types, ids, severities, lengths, msg_buffer);
-
-            char* begin = &msg_buffer[0];
-            char* end = &msg_buffer[lengths[0]];
-            for (int i = 0; i < msgs; i++)
-            {
-                if(ids[i] == 131169 || ids[i] == 131185 || ids[i] == 131218 || ids[i] == 131204)
-                    continue;
-
-                ImGui::Text("%s %s %u %s",
-                             vge::gfx::gl_enum_to_string(sources[i]),
-                             vge::gfx::gl_enum_to_string(types[i]),
-                             ids[i],
-                             vge::gfx::gl_enum_to_string(severities[i]));
-                ImGui::SameLine();
-                // If we are on the first buffer, then we should do: 0, everywhere else: lengths[i - 1]
-                ImGui::TextUnformatted(begin, end);
-
-                begin = end;
-                end += lengths[i + 1];
-            }
-
-            // if (msgs != 0)
-            // {
-            //     ImGui::TextWrapped("%s", buffer);
-            // }
-
-            ImGui::EndTabItem();
-        }
-
-        // TODO: Look into: http://docs.gl/gl4/glGetDebugMessageLog
-
         ImGui::EndTabBar();
     }
 }
