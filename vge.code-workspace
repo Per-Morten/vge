@@ -55,6 +55,9 @@
             "optional": "cpp",
             "string_view": "cpp",
             "algorithm": "cpp"
-        }
+        },
+        "C_Cpp.default.cppStandard": "c++17",
+        "editor.formatOnType": true,
+        "C_Cpp.formatting": "Disabled"
     }
 }

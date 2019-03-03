@@ -8,6 +8,7 @@
 #include <vge_profiler.h>
 #include <vge_gfx.h>
 #include <vge_debug.h>
+#include <vge_obj_loader.h>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -16,6 +17,13 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+
+#include <tiny_obj_loader/tiny_obj_loader.h>
+
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+// TODO: Add support for just drawing arrays!
 
 void
 framebuffer_size_callback([[maybe_unused]] GLFWwindow* window,
@@ -81,6 +89,7 @@ main(int argc, char** argv)
         return ((vge::malloc_allocator*)allocator)->deallocate(ptr);
     };
 
+
     VGE_DEBUG("%p", &imgui_dealloc);
     vge::malloc_allocator imgui_allocator("imgui");
     ImGui::SetAllocatorFunctions(imgui_alloc, imgui_dealloc, &imgui_allocator);
@@ -92,6 +101,11 @@ main(int argc, char** argv)
 
     vge::init_imgui_style();
     vge::init_gl_logger();
+    //glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+
+
 
     // Setup subsystems
     vge::malloc_allocator profiler_allocator("profiler");
@@ -147,6 +161,39 @@ main(int argc, char** argv)
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, vge::gfx_manager::get_texture_id(tex_handle2));
 
+    auto object = VGE::LoadOBJ("resources/meshes/cube/cube.obj");
+    auto handle2 = vge::gfx_manager::create_mesh();
+    vge::gfx_manager::mesh_data data2;
+    data2.name = "obj_file";
+    data2.triangles = (GLuint*)object.indices.data();
+    data2.triangle_count = object.indices.size();
+    data2.vertex_count = object.positions.size();
+    data2.vertices = object.positions.data();
+    data2.uv0 = object.uv_coords.data();
+    vge::gfx_manager::set_mesh(handle2, data2);
+
+    // auto cube = CreateCube();
+    // auto handle2 = vge::gfx_manager::create_mesh();
+    // vge::gfx_manager::mesh_data data2;
+    // data2.name = "cube";
+    // data2.vertices = std::get<0>(cube).data();
+    // data2.vertex_count = std::get<0>(cube).size();
+    // data2.triangles = std::get<3>(cube).data();
+    // data2.triangle_count = std::get<3>(cube).size();
+    // data2.uv0 = std::get<2>(cube).data();
+    // vge::gfx_manager::set_mesh(handle2, data2);
+
+
+    glm::mat4 view          = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+    glm::mat4 projection    = glm::mat4(1.0f);
+
+    // near = 0.1, far = 100.0f
+    projection = glm::perspective(glm::radians(45.0f), (float)800 / (float)640, 0.1f, 100.0f);
+    view = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    //view       = glm::translate(view, glm::vec3(0.0f, 0.0f, -5.0f));
+
+    glUniformMatrix4fv(glGetUniformLocation(shader_id, "view"), 1, GL_FALSE, glm::value_ptr(view));
+
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
@@ -159,15 +206,36 @@ main(int argc, char** argv)
         // Clearing
         const auto clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glUniformMatrix4fv(glGetUniformLocation(shader_id, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+        glm::mat4 model = glm::mat4(1.0f);
+        // pass transformation matrices to the shader
+
+        glUniformMatrix4fv(glGetUniformLocation(shader_id, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
         // Drawing
-        vge::gfx_manager::draw_mesh(handle);
+        //vge::gfx_manager::draw_mesh(handle);
+        vge::gfx_manager::draw_mesh(handle2);
+
+        // model = glm::translate(glm::mat4(1.0f) ,glm::vec3(1.0f,  1.0f, -1.0f));
+        // glUniformMatrix4fv(glGetUniformLocation(shader_id, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        // vge::gfx_manager::draw_mesh(handle);
+        // model = glm::translate(glm::mat4(1.0f) ,glm::vec3(-1.0f,  1.0f, -1.0f));
+        // glUniformMatrix4fv(glGetUniformLocation(shader_id, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        // vge::gfx_manager::draw_mesh(handle);
+        // model = glm::translate(glm::mat4(1.0f) ,glm::vec3(1.0f,  -1.0f, -1.0f));
+        // glUniformMatrix4fv(glGetUniformLocation(shader_id, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        // vge::gfx_manager::draw_mesh(handle);
+        // model = glm::translate(glm::mat4(1.0f) ,glm::vec3(-1.0f,  -1.0f, -1.0f));
+        // glUniformMatrix4fv(glGetUniformLocation(shader_id, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        // vge::gfx_manager::draw_mesh(handle);
 
         // Draw subsystems
         vge::draw_debug_windows();
 
-        ImGui::ShowDemoWindow();
+        //ImGui::ShowDemoWindow();
 
         // Rendering
         ImGui::Render();
@@ -190,7 +258,6 @@ main(int argc, char** argv)
 
     glfwDestroyWindow(window);
     glfwTerminate();
-
 
     return 0;
 }

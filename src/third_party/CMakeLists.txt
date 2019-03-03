@@ -8,6 +8,9 @@ set(headers
 
     # GLAD
     glad/glad.h
+
+    # TinyObj
+    tiny_obj_loader/tiny_obj_loader.h
 )
 
 set(source
@@ -24,6 +27,9 @@ set(source
 
     # GLAD
     glad/glad.c
+
+    # TinyObj
+    tiny_obj_loader/tiny_obj_loader.cpp
 )
 
 add_library(vge_third_party
@@ -36,6 +42,7 @@ target_include_directories(vge_third_party PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/imgui"
     "${CMAKE_CURRENT_SOURCE_DIR}/imgui/examples"
     "${CMAKE_CURRENT_SOURCE_DIR}/stb"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tiny_obj_loader"
 )
 
 add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD)

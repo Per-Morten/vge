@@ -5,5 +5,6 @@ subdirs(
     debug
     gfx
     memory
+    utility
 )
 

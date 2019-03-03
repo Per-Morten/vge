@@ -357,7 +357,6 @@ namespace local::introspection
     #define VARIABLE_RENDER_GENERATOR(cputype, count, gltype, glread, glwrite, imguifunc)  \
     {                                                                                      \
         ImGui::Text(#gltype" %s", name);                                                   \
-        ImGui::SameLine();                                                                 \
         cputype value[count];                                                              \
         glread(program, location, &value[0]);                                              \
         if (imguifunc("", &value[0]))                                                      \
@@ -370,11 +369,11 @@ namespace local::introspection
         switch (type)
         {
             case GL_FLOAT:
-                VARIABLE_RENDER_GENERATOR(float, 1, GL_FLOAT, glGetUniformfv, glProgramUniform1fv, ImGui::DragFloat);
+                VARIABLE_RENDER_GENERATOR(GLfloat, 1, GL_FLOAT, glGetUniformfv, glProgramUniform1fv, ImGui::DragFloat);
                 break;
 
             case GL_FLOAT_VEC2:
-                VARIABLE_RENDER_GENERATOR(float, 2, GL_FLOAT_VEC2, glGetUniformfv, glProgramUniform2fv, ImGui::DragFloat2);
+                VARIABLE_RENDER_GENERATOR(GLfloat, 2, GL_FLOAT_VEC2, glGetUniformfv, glProgramUniform2fv, ImGui::DragFloat2);
                 break;
 
             case GL_FLOAT_VEC3:
@@ -401,8 +400,56 @@ namespace local::introspection
             }
                 break;
 
+            case GL_INT:
+                VARIABLE_RENDER_GENERATOR(GLint, 1, GL_INT, glGetUniformiv, glProgramUniform1iv, ImGui::DragInt);
+                break;
+
+            case GL_INT_VEC2:
+                VARIABLE_RENDER_GENERATOR(GLint, 2, GL_INT, glGetUniformiv, glProgramUniform2iv, ImGui::DragInt2);
+                break;
+
+            case GL_INT_VEC3:
+                VARIABLE_RENDER_GENERATOR(GLint, 3, GL_INT, glGetUniformiv, glProgramUniform3iv, ImGui::DragInt3);
+                break;
+
+            case GL_INT_VEC4:
+                VARIABLE_RENDER_GENERATOR(GLint, 4, GL_INT, glGetUniformiv, glProgramUniform4iv, ImGui::DragInt4);
+                break;
+
             case GL_SAMPLER_2D:
-                VARIABLE_RENDER_GENERATOR(int, 1, GL_SAMPLER_2D, glGetUniformiv, glProgramUniform1iv, ImGui::InputInt);
+                VARIABLE_RENDER_GENERATOR(GLint, 1, GL_SAMPLER_2D, glGetUniformiv, glProgramUniform1iv, ImGui::DragInt);
+                break;
+
+            case GL_FLOAT_MAT3:
+            {
+                ImGui::Text("GL_FLOAT_MAT3 %s:", name);
+                GLfloat value[3 * 3];
+                glGetUniformfv(program, location, value);
+                int column = 0;
+                for (int i = 0; i < 9; i += 3)
+                {
+                    ImGui::PushID(i);
+                    ImGui::DragFloat3("", &value[i], 0.25f);
+                    ImGui::PopID();
+                }
+                glProgramUniformMatrix3fv(program, location, 1, GL_FALSE, value);
+            }
+                break;
+
+            case GL_FLOAT_MAT4:
+            {
+                ImGui::Text("GL_FLOAT_MAT4 %s:", name);
+                GLfloat value[4 * 4];
+                glGetUniformfv(program, location, value);
+                int column = 0;
+                for (int i = 0; i < 16; i += 4)
+                {
+                    ImGui::PushID(i);
+                    ImGui::DragFloat4("", &value[i], 0.25f);
+                    ImGui::PopID();
+                }
+                glProgramUniformMatrix4fv(program, location, 1, GL_FALSE, value);
+            }
                 break;
 
             default:
@@ -417,8 +464,6 @@ namespace local::introspection
 void
 vge::gfx_manager::draw_imgui_debug()
 {
-
-
     if (ImGui::BeginTabBar("GraphicsTab"))
     {
         if (ImGui::BeginTabItem("Meshes"))
@@ -427,6 +472,7 @@ vge::gfx_manager::draw_imgui_debug()
             {
                 char buffer[32];
                 std::sprintf(buffer, "Handle: %d", mesh.handle);
+                ImGui::PushID(buffer);
                 if (ImGui::CollapsingHeader(buffer))
                 {
                     ImGui::Text("name: %s", mesh.mesh_data.name.c_str());
@@ -495,6 +541,7 @@ vge::gfx_manager::draw_imgui_debug()
                         ImGui::PopStyleVar();
                     }
                 }
+                ImGui::PopID();
             }
             ImGui::EndTabItem();
         }

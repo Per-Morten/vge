@@ -9,7 +9,7 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 
 # Compiler setup
 if (NOT WIN32)
-    set(CMAKE_CXX_COMPILER clang++-6.0)
+    set(CMAKE_CXX_COMPILER g++)
 endif()
 
 set(VGE_STANDARD_FLAGS "")
