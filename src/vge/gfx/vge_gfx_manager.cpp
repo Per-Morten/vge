@@ -6,7 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include <vector>
+#include <vge_array.h>
 
 #include <glm/gtc/type_ptr.hpp>
 
@@ -31,32 +31,32 @@ struct mesh_gl_data
 // together with the VBO, EBO etc either.
 struct mesh_info
 {
-    vge::gfx_manager::mesh_handle handle;
+    vge::gfx_manager::MeshHandle handle;
     vge::gfx_manager::mesh_data mesh_data;
     mesh_gl_data gl_data;
 };
 
-static std::vector<mesh_info> g_mesh_table;
-static vge::gfx_manager::mesh_handle g_new_mesh_handle;
+static VGE::Array<mesh_info> g_mesh_table;
+static vge::gfx_manager::MeshHandle g_new_mesh_handle;
 
-vge::gfx_manager::mesh_handle
+vge::gfx_manager::MeshHandle
 vge::gfx_manager::create_mesh()
 {
     auto NewPair = mesh_info();
     NewPair.handle = g_new_mesh_handle++;
-    g_mesh_table.push_back(NewPair);
+    g_mesh_table.PushBack(NewPair);
     return NewPair.handle;
 }
 
 void
-vge::gfx_manager::set_mesh(vge::gfx_manager::mesh_handle handle,
+vge::gfx_manager::set_mesh(vge::gfx_manager::MeshHandle handle,
                            vge::gfx_manager::mesh_data data)
 {
-    auto itr = std::find_if(g_mesh_table.begin(), g_mesh_table.end(),
+    auto itr = std::find_if(g_mesh_table.Begin(), g_mesh_table.End(),
                             [=](const auto& item)
                             { return item.handle == handle; });
 
-    if (itr == g_mesh_table.end())
+    if (itr == g_mesh_table.End())
     {
         VGE_WARN("Handle %d not found", handle);
         return;
@@ -96,9 +96,9 @@ vge::gfx_manager::set_mesh(vge::gfx_manager::mesh_handle handle,
 
 // TODO: This should be assumed to be async.
 void
-vge::gfx_manager::draw_mesh(vge::gfx_manager::mesh_handle handle)
+vge::gfx_manager::draw_mesh(vge::gfx_manager::MeshHandle handle)
 {
-    auto itr = std::find_if(g_mesh_table.begin(), g_mesh_table.end(),
+    auto itr = std::find_if(g_mesh_table.Begin(), g_mesh_table.End(),
                             [=](const auto& item)
                             { return item.handle == handle; });
 
@@ -111,8 +111,8 @@ vge::gfx_manager::draw_mesh(vge::gfx_manager::mesh_handle handle)
 ///////////////////////////////////////////////////////////
 struct texture_info
 {
-    vge::gfx_manager::texture_handle handle;
-    vge::gfx_manager::texture_id texture_id;
+    vge::gfx_manager::TextureHandle handle;
+    vge::gfx_manager::TextureID texture_id;
 
     // TODO: Move this extended information into different places to make better use of cache etc.
     std::string filepath;
@@ -121,35 +121,37 @@ struct texture_info
     int height;
 };
 
-static int g_new_texture_handle;
-static std::vector<texture_info> g_texture_table;
+static vge::gfx_manager::TextureHandle g_new_texture_handle;
+static VGE::Array<texture_info> g_texture_table;
 
 namespace local::texture
 {
     texture_info*
-    get_texture(vge::gfx_manager::texture_handle handle)
+    get_texture(vge::gfx_manager::TextureHandle handle)
     {
-        auto itr = std::find_if(g_texture_table.begin(),
-                                g_texture_table.end(),
+        auto itr = std::find_if(g_texture_table.Begin(),
+                                g_texture_table.End(),
                                 [=](const auto& item)
                                 { return item.handle == handle; });
 
-        return (itr != g_texture_table.end())
+        return (itr != g_texture_table.End())
                    ? &(*itr)
                    : nullptr;
     }
 }
 
-vge::gfx_manager::texture_handle
+vge::gfx_manager::TextureHandle
 vge::gfx_manager::create_texture()
 {
-    auto& texture = g_texture_table.emplace_back();
+    g_texture_table.PushBack({});
+    auto& texture = g_texture_table.Back();
+    //auto& texture = g_texture_table.emplace_back();
     texture.handle = g_new_texture_handle++;
     return texture.handle;
 }
 
 void
-vge::gfx_manager::load_texture(vge::gfx_manager::texture_handle handle,
+vge::gfx_manager::load_texture(vge::gfx_manager::TextureHandle handle,
                                const char* filepath)
 {
     auto texture = local::texture::get_texture(handle);
@@ -183,8 +185,8 @@ vge::gfx_manager::load_texture(vge::gfx_manager::texture_handle handle,
     stbi_image_free(data);
 }
 
-vge::gfx_manager::texture_id
-vge::gfx_manager::get_texture_id(vge::gfx_manager::texture_handle handle)
+vge::gfx_manager::TextureID
+vge::gfx_manager::get_texture_id(vge::gfx_manager::TextureHandle handle)
 {
     return local::texture::get_texture(handle)->texture_id;
 }
@@ -194,8 +196,8 @@ vge::gfx_manager::get_texture_id(vge::gfx_manager::texture_handle handle)
 ///////////////////////////////////////////////////////////
 struct program
 {
-    vge::gfx_manager::shader_handle handle;
-    vge::gfx_manager::program_id program_id;
+    vge::gfx_manager::ShaderHandle handle;
+    vge::gfx_manager::ProgramID program_id;
 };
 
 struct shader_source
@@ -207,10 +209,10 @@ struct shader_source
     char source[1024 * 16];
 };
 
-static std::vector<program> g_program_table;
-static vge::gfx_manager::shader_handle g_new_program_handle;
+static VGE::Array<program> g_program_table;
+static vge::gfx_manager::ShaderHandle g_new_program_handle;
 
-static std::vector<shader_source> g_shader_source_table;
+static VGE::Array<shader_source> g_shader_source_table;
 
 namespace local::shader
 {
@@ -266,13 +268,13 @@ namespace local::shader
     }
 
     program*
-    get_shader(vge::gfx_manager::shader_handle handle)
+    get_shader(vge::gfx_manager::ShaderHandle handle)
     {
-        auto itr = std::find_if(g_program_table.begin(), g_program_table.end(),
+        auto itr = std::find_if(g_program_table.Begin(), g_program_table.End(),
                                 [=](const auto& item)
                                 { return item.handle == handle; });
 
-        return (itr != g_program_table.end())
+        return (itr != g_program_table.End())
                     ? &(*itr)
                     : nullptr;
     }
@@ -280,29 +282,29 @@ namespace local::shader
     shader_source*
     get_shader_source(GLuint shader_id)
     {
-        auto itr = std::find_if(g_shader_source_table.begin(), g_shader_source_table.end(),
+        auto itr = std::find_if(g_shader_source_table.Begin(), g_shader_source_table.End(),
                                 [=](const auto& item)
                                 { return item.shader_id == shader_id; });
 
-        return (itr != g_shader_source_table.end())
+        return (itr != g_shader_source_table.End())
                     ? &(*itr)
                     : nullptr;
     }
 } // namespace local::shader
 
-vge::gfx_manager::shader_handle
+vge::gfx_manager::ShaderHandle
 vge::gfx_manager::create_shader()
 {
     auto new_data = program();
     new_data.handle = g_new_program_handle++;
     new_data.program_id = glCreateProgram();
-    g_program_table.push_back(new_data);
+    g_program_table.PushBack(new_data);
 
     return new_data.handle;
 }
 
 void
-vge::gfx_manager::attach_shader(vge::gfx_manager::shader_handle handle,
+vge::gfx_manager::attach_shader(vge::gfx_manager::ShaderHandle handle,
                                 const char* filepath,
                                 GLenum type)
 {
@@ -313,7 +315,7 @@ vge::gfx_manager::attach_shader(vge::gfx_manager::shader_handle handle,
     std::strcpy(tmp.file, filepath);
     local::shader::load_source(filepath, tmp.source, sizeof(tmp.source));
     tmp.shader_id = local::shader::compile_shader(tmp.source, type);
-    g_shader_source_table.push_back(tmp);
+    g_shader_source_table.PushBack(tmp);
 
     auto program = local::shader::get_shader(handle);
     VGE_ASSERT(program, "Did not find program with handle: %d", handle);
@@ -322,7 +324,7 @@ vge::gfx_manager::attach_shader(vge::gfx_manager::shader_handle handle,
 }
 
 void
-vge::gfx_manager::compile_and_link_shader(shader_handle handle)
+vge::gfx_manager::compile_and_link_shader(ShaderHandle handle)
 {
     auto program = local::shader::get_shader(handle);
     VGE_ASSERT(program, "Did not find program with handle: %d", handle);
@@ -338,8 +340,8 @@ vge::gfx_manager::compile_and_link_shader(shader_handle handle)
     }
 }
 
-vge::gfx_manager::program_id
-vge::gfx_manager::get_shader_id(vge::gfx_manager::shader_handle handle)
+vge::gfx_manager::ProgramID
+vge::gfx_manager::get_shader_id(vge::gfx_manager::ShaderHandle handle)
 {
     auto program = local::shader::get_shader(handle);
     VGE_ASSERT(program, "Did not find program with handle: %d", handle);
@@ -425,7 +427,6 @@ namespace local::introspection
                 ImGui::Text("GL_FLOAT_MAT3 %s:", name);
                 GLfloat value[3 * 3];
                 glGetUniformfv(program, location, value);
-                int column = 0;
                 for (int i = 0; i < 9; i += 3)
                 {
                     ImGui::PushID(i);
@@ -441,7 +442,6 @@ namespace local::introspection
                 ImGui::Text("GL_FLOAT_MAT4 %s:", name);
                 GLfloat value[4 * 4];
                 glGetUniformfv(program, location, value);
-                int column = 0;
                 for (int i = 0; i < 16; i += 4)
                 {
                     ImGui::PushID(i);
@@ -468,8 +468,9 @@ vge::gfx_manager::draw_imgui_debug()
     {
         if (ImGui::BeginTabItem("Meshes"))
         {
-            for (const auto& mesh : g_mesh_table)
+            for (int i = 0; i < g_mesh_table.Size(); i++)
             {
+                const auto& mesh = g_mesh_table[i];
                 char buffer[32];
                 std::sprintf(buffer, "Handle: %d", mesh.handle);
                 ImGui::PushID(buffer);
@@ -548,8 +549,9 @@ vge::gfx_manager::draw_imgui_debug()
 
         if (ImGui::BeginTabItem("Shader Programs"))
         {
-            for (const auto& program : g_program_table)
+            for (int i = 0; i < g_program_table.Size(); i++)
             {
+                const auto& program = g_program_table[i];
                 char buffer[32];
                 std::sprintf(buffer, "Handle: %d", program.handle);
                 if (ImGui::CollapsingHeader(buffer))
@@ -567,15 +569,15 @@ vge::gfx_manager::draw_imgui_debug()
                         VGE_ASSERT(max_name_length < 32, "Currently don't support uniform names of more than 32 characters, it was %d", max_name_length);
                         char name[32];
 
-                        for (int i = 0; i < uniform_count; i++)
+                        for (int j = 0; j < uniform_count; j++)
                         {
                             GLint ignored;
                             GLenum type;
-                            glGetActiveUniform(program.program_id, i, max_name_length, nullptr, &ignored, &type, name);
+                            glGetActiveUniform(program.program_id, j, max_name_length, nullptr, &ignored, &type, name);
 
                             const auto location = glGetUniformLocation(program.program_id, name);
                             ImGui::Indent();
-                            ImGui::PushID(i);
+                            ImGui::PushID(j);
                             ImGui::PushItemWidth(-1.0f);
                             local::introspection::render_uniform_variable(program.program_id, type, name, location);
                             ImGui::PopItemWidth();
@@ -656,8 +658,9 @@ vge::gfx_manager::draw_imgui_debug()
 
         if (ImGui::BeginTabItem("Textures"))
         {
-            for (const auto& texture : g_texture_table)
+            for (int i = 0; i < g_texture_table.Size(); i++)
             {
+                const auto& texture = g_texture_table[i];
                 char buffer[128];
                 std::sprintf(buffer, "Handle: %d", texture.handle);
                 if (ImGui::CollapsingHeader(buffer))

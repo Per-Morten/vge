@@ -1,10 +1,11 @@
 set(headers
     vge_attributes.h
     vge_core.h
+    vge_thread.h
 )
 
 set(source
-
+    vge_thread.cpp
 )
 
 add_library(vge_core
@@ -21,6 +22,8 @@ if (WIN32)
 else()
     target_link_libraries(vge_core
         m #math
+        pthread
         vge_third_party
+        vge_debug
     )
 endif()

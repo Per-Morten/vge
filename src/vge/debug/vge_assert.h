@@ -53,12 +53,15 @@ else                                                                \
 }
 
 #elif defined(VGE_ASSERT_THROW)
+#include <stdexcept>
 #define VGE_NOEXCEPT
 #define VGE_ASSERT(expr, fmt, ...)                                  \
 if (VGE_LIKELY(expr)) { }                                           \
 else                                                                \
 {                                                                   \
-    VGE_ERROR("TODO: THROW EXCEPTION: ");                           \
+    char buffer[1024];                                              \
+    std::sprintf(buffer, "Assertion failure: " #expr ": " fmt, ##__VA_ARGS__); \
+    throw std::runtime_error(buffer);                                  \
 }
 
 #else

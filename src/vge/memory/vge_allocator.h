@@ -1,19 +1,26 @@
 #pragma once
 #include <vge_core.h>
 
-namespace vge
+// TODO: Should have an own Resource/Static Allocator, for stuff that is static.
+// TODO: Move this to be purely an interface, no need to store name in here!
+namespace VGE
 {
-    class allocator
+    class Allocator
     {
     public:
-        allocator(const char* name) VGE_NOEXCEPT;
+        virtual ~Allocator() VGE_NOEXCEPT {};
 
-        virtual void* allocate(int size) VGE_NOEXCEPT = 0;
-        virtual void deallocate(void* ptr) VGE_NOEXCEPT = 0;
-        virtual int allocated_size() VGE_NOEXCEPT = 0;
+        virtual void* Allocate(int size) VGE_NOEXCEPT = 0;
+        virtual void Deallocate(void* ptr) VGE_NOEXCEPT = 0;
+        virtual int AllocatedSize() const VGE_NOEXCEPT = 0;
+        virtual void Clear() VGE_NOEXCEPT = 0; // Deallocate all memory
 
-    protected:
-        static constexpr int max_name_length = 256;
-        char m_name[max_name_length];
+        // Metadata for visualization - Only implemented to avoid compiler errors with malloc allocator
+        virtual int Capacity() const VGE_NOEXCEPT {return 0;}
+        virtual const void* MemoryBegin() const VGE_NOEXCEPT {return nullptr;}
+        virtual const char* Name() const VGE_NOEXCEPT {return "unnamed";}
     };
+
+    Allocator*
+    GetDefaultAllocator();
 }

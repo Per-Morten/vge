@@ -8,6 +8,7 @@
     "settings": {
         "C_Cpp.errorSquiggles": "Enabled",
         "files.associations": {
+            "*.tpp": "cpp",
             "cctype": "cpp",
             "clocale": "cpp",
             "cmath": "cpp",
@@ -54,10 +55,31 @@
             "new": "cpp",
             "optional": "cpp",
             "string_view": "cpp",
-            "algorithm": "cpp"
+            "algorithm": "cpp",
+            "bitset": "cpp",
+            "numeric": "cpp",
+            "variant": "cpp"
         },
         "C_Cpp.default.cppStandard": "c++17",
         "editor.formatOnType": true,
-        "C_Cpp.formatting": "Disabled"
+        "C_Cpp.formatting": "Disabled",
+        "catch2TestExplorer.defaultRunningTimeoutSec": 20,
+        "catch2TestExplorer.defaultWatchTimeoutSec": 2,
+        "testExplorer.gutterDecoration": false,
+        "testExplorer.onStart": "reset",
+        "testExplorer.sort": "byLabelWithSuitesFirst",
+        "testExplorer.onReload": "reset",
+        "testExplorer.codeLens": false,
+        "catch2TestExplorer.workerMaxNumber": 4,
+        "workbench.colorCustomizations": {
+            "editor.background": "#262626",
+            "editor.foreground": "#F8F8F8",
+            "editorCursor.foreground": "#F43753",
+            "editor.selectionBackground": "#1FB6DC63",
+            "editor.lineHighlightBackground": "#FFFFFF1A",
+            "statusBar.background": "#518692",
+            "statusBarItem.hoverBackground": "#6aa0ac",
+            "statusBar.foreground": "#e7e7e7"
+        }
     }
 }

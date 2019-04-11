@@ -1,6 +1,9 @@
+#include <imgui.h>
 #include <vge_imgui.h>
 #include <vge_gfx_manager.h>
 #include <vge_log.h>
+#include <vge_memory.h>
+#include <vge_profiler.h>
 
 void
 vge::init_imgui_style()
@@ -29,6 +32,8 @@ vge::draw_debug_windows()
     {
         {"Graphics", gfx_manager::draw_imgui_debug, false},
         {"Extended Logging", draw_log_window, false},
+        {"Memory", []{VGE::gMemoryManager.DrawDebug();}, true},
+        {"Profiler", []{VGE::gProfiler.DrawProfiler();}, true},
     };
 
     static bool overlay = true;

@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstring>
 #include <signal.h>
+#include <vge_thread.h>
 
 ///////////////////////////////////////////////////////////
 /// \brief
@@ -28,6 +29,7 @@ vge_log(const char* type,
         const char* filepath,
         const char* func,
         const int line,
+        VGE::Thread::ThreadID thread_id,
         const char* fmt,
         ...);
 
@@ -45,10 +47,10 @@ vge_log(const char* type,
 /// \note
 ///     Can be called concurrently.
 ///////////////////////////////////////////////////////////
-#define VGE_ERROR(fmt, ...)                                             \
-{                                                                       \
-    vge_log("ERROR", __FILE__, __func__, __LINE__, fmt, ##__VA_ARGS__); \
-    raise(SIGTRAP);                                                     \
+#define VGE_ERROR(fmt, ...)                                                                             \
+{                                                                                                       \
+    vge_log("ERROR", __FILE__, __func__, __LINE__, VGE::Thread::ThisThread::ID(), fmt, ##__VA_ARGS__);  \
+    raise(SIGTRAP);                                                                                     \
 }
 
 ///////////////////////////////////////////////////////////
@@ -61,7 +63,7 @@ vge_log(const char* type,
 ///     Can be called concurrently.
 ///////////////////////////////////////////////////////////
 #define VGE_WARN(fmt, ...) \
-vge_log("WARN", __FILE__, __func__, __LINE__, fmt, ##__VA_ARGS__);
+vge_log("WARN", __FILE__, __func__, __LINE__, VGE::Thread::ThisThread::ID(), fmt, ##__VA_ARGS__);
 
 ///////////////////////////////////////////////////////////
 /// \ingroup vge_core
@@ -73,7 +75,7 @@ vge_log("WARN", __FILE__, __func__, __LINE__, fmt, ##__VA_ARGS__);
 ///     Can be called concurrently.
 ///////////////////////////////////////////////////////////
 #define VGE_DEBUG(fmt, ...) \
-vge_log("DEBUG", __FILE__, __func__, __LINE__, fmt, ##__VA_ARGS__); \
+vge_log("DEBUG", __FILE__, __func__, __LINE__, VGE::Thread::ThisThread::ID(), fmt, ##__VA_ARGS__); \
 
 
 ///////////////////////////////////////////////////////////
@@ -86,7 +88,7 @@ vge_log("DEBUG", __FILE__, __func__, __LINE__, fmt, ##__VA_ARGS__); \
 ///     Can be called concurrently.
 ///////////////////////////////////////////////////////////
 #define VGE_INFO(fmt, ...) \
-vge_log("INFO", __FILE__, __func__, __LINE__, fmt, ##__VA_ARGS__);
+vge_log("INFO", __FILE__, __func__, __LINE__, VGE::Thread::ThisThread::ID(), fmt, ##__VA_ARGS__);
 
 namespace vge
 {

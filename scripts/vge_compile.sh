@@ -49,8 +49,10 @@ vge_compile()
         then
             printf "Usage: "
             printf "\n\t-o target (editor, engine)"
-            printf "\n\t-t type (debug, release, test, rebuild | clean)"
+            printf "\n\t-t type (debug, release, tests, rebuild | clean)"
             printf "\n\n"
+
+            return 0
         fi
     done
 

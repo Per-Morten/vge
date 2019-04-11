@@ -2,15 +2,16 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include <vge_gfx_gl.h>
+#include <vge_array.h>
 
 namespace VGE
 {
     struct OBJAsset
     {
-        std::vector<glm::vec3> positions;
-        std::vector<glm::vec2> uv_coords;
-        std::vector<glm::vec3> normals;
-        std::vector<int> indices;
+        VGE::Array<glm::vec3> positions;
+        VGE::Array<glm::vec2> uv_coords;
+        VGE::Array<glm::vec3> normals;
+        VGE::Array<int> indices;
     };
 
     OBJAsset

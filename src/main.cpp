@@ -9,6 +9,8 @@
 #include <vge_gfx.h>
 #include <vge_debug.h>
 #include <vge_obj_loader.h>
+#include <vge_array.h>
+#include <vge_slot_map.h>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -23,10 +25,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-// TODO: Add support for just drawing arrays!
-
 void
-framebuffer_size_callback([[maybe_unused]] GLFWwindow* window,
+framebuffer_size_callback(VGE_UNUSED GLFWwindow* window,
                           int width, int height)
 {
     glViewport(0, 0, width, height);
@@ -40,7 +40,8 @@ process_input(GLFWwindow* window)
 }
 
 int
-main(int argc, char** argv)
+main(VGE_UNUSED int argc,
+     VGE_UNUSED char** argv)
 {
     vge::init_logger();
 
@@ -82,16 +83,16 @@ main(int argc, char** argv)
     IMGUI_CHECKVERSION();
     auto imgui_alloc = [](std::size_t size, void* allocator)
     {
-        return ((vge::malloc_allocator*)allocator)->allocate(size);
+        return ((VGE::MallocAllocator*)allocator)->Allocate(size);
     };
     auto imgui_dealloc = [](void* ptr, void* allocator)
     {
-        return ((vge::malloc_allocator*)allocator)->deallocate(ptr);
+        return ((VGE::MallocAllocator*)allocator)->Deallocate(ptr);
     };
 
 
     VGE_DEBUG("%p", &imgui_dealloc);
-    vge::malloc_allocator imgui_allocator("imgui");
+    VGE::MallocAllocator imgui_allocator("imgui");
     ImGui::SetAllocatorFunctions(imgui_alloc, imgui_dealloc, &imgui_allocator);
 
     ImGui::CreateContext();
@@ -105,55 +106,22 @@ main(int argc, char** argv)
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
-
-
     // Setup subsystems
-    vge::malloc_allocator profiler_allocator("profiler");
-    vge::initialize_profiler(profiler_allocator);
 
-    // Toying with OpenGL
-    unsigned int indices[] = {
-        0, 1, 3,
-        1, 2, 3,
-    };
 
-    glm::vec3 vertices[] = {
-        {0.5f,  0.5f, 0.0f},  // top right
-        {0.5f, -0.5f, 0.0f},  // bottom right
-        {-0.5f, -0.5f, 0.0f},  // bottom left
-        {-0.5f,  0.5f, 0.0f},  // top left
-    };
-
-    glm::vec2 tex_coords[] = {
-        {1.0f, 1.0f},
-        {1.0f, 0.0f},
-        {0.0f, 0.0f},
-        {0.0f, 1.0f},
-    };
-
-    vge::gfx_manager::mesh_data data;
-    data.name = "test";
-    data.vertices = vertices;
-    data.uv0 = tex_coords;
-    data.triangles = indices;
-    data.triangle_count = 6;
-    data.vertex_count = 4;
-
-    auto handle = vge::gfx_manager::create_mesh();
-    vge::gfx_manager::set_mesh(handle, data);
     auto shader_handle = vge::gfx_manager::create_shader();
     vge::gfx_manager::attach_shader(shader_handle, "resources/shaders/basic_shader.vs", GL_VERTEX_SHADER);
     vge::gfx_manager::attach_shader(shader_handle, "resources/shaders/basic_shader.fs", GL_FRAGMENT_SHADER);
     vge::gfx_manager::compile_and_link_shader(shader_handle);
     auto shader_id = vge::gfx_manager::get_shader_id(shader_handle);
 
-    glUseProgram(shader_id);
 
     auto tex_handle1 = vge::gfx_manager::create_texture();
     vge::gfx_manager::load_texture(tex_handle1, "resources/textures/container.jpg");
     auto tex_handle2 = vge::gfx_manager::create_texture();
     vge::gfx_manager::load_texture(tex_handle2, "resources/textures/awesomeface.png");
 
+    glUseProgram(shader_id);
     glUniform1i(glGetUniformLocation(shader_id, "u_texture0"), 0);
     glUniform1i(glGetUniformLocation(shader_id, "u_texture1"), 1);
     glActiveTexture(GL_TEXTURE0);
@@ -165,24 +133,15 @@ main(int argc, char** argv)
     auto handle2 = vge::gfx_manager::create_mesh();
     vge::gfx_manager::mesh_data data2;
     data2.name = "obj_file";
-    data2.triangles = (GLuint*)object.indices.data();
-    data2.triangle_count = object.indices.size();
-    data2.vertex_count = object.positions.size();
-    data2.vertices = object.positions.data();
-    data2.uv0 = object.uv_coords.data();
+    data2.triangles = (GLuint*)object.indices.Data();
+    data2.triangle_count = object.indices.Size();
+    data2.vertex_count = object.positions.Size();
+    data2.vertices = object.positions.Data();
+    data2.uv0 = object.uv_coords.Data();
     vge::gfx_manager::set_mesh(handle2, data2);
 
-    // auto cube = CreateCube();
-    // auto handle2 = vge::gfx_manager::create_mesh();
-    // vge::gfx_manager::mesh_data data2;
-    // data2.name = "cube";
-    // data2.vertices = std::get<0>(cube).data();
-    // data2.vertex_count = std::get<0>(cube).size();
-    // data2.triangles = std::get<3>(cube).data();
-    // data2.triangle_count = std::get<3>(cube).size();
-    // data2.uv0 = std::get<2>(cube).data();
-    // vge::gfx_manager::set_mesh(handle2, data2);
-
+    auto third = vge::gfx_manager::create_mesh();
+    vge::gfx_manager::set_mesh(third, data2);
 
     glm::mat4 view          = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
     glm::mat4 projection    = glm::mat4(1.0f);
@@ -198,41 +157,46 @@ main(int argc, char** argv)
     while (!glfwWindowShouldClose(window))
     {
         // New Frame
-        glfwPollEvents();
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
+        VGE::gProfiler.BeginFrame();
+        {
+            VGE_PROFILE_LABEL("Main Loop");
 
-        // Clearing
-        const auto clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-        glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glfwPollEvents();
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
 
-        glUniformMatrix4fv(glGetUniformLocation(shader_id, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+            // Clearing
+            const auto clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+            glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glm::mat4 model = glm::mat4(1.0f);
-        // pass transformation matrices to the shader
+            glUniformMatrix4fv(glGetUniformLocation(shader_id, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-        glUniformMatrix4fv(glGetUniformLocation(shader_id, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            glm::mat4 model = glm::mat4(1.0f);
+            // pass transformation matrices to the shader
 
-        // Drawing
-        //vge::gfx_manager::draw_mesh(handle);
-        vge::gfx_manager::draw_mesh(handle2);
+            glUniformMatrix4fv(glGetUniformLocation(shader_id, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
-        // model = glm::translate(glm::mat4(1.0f) ,glm::vec3(1.0f,  1.0f, -1.0f));
-        // glUniformMatrix4fv(glGetUniformLocation(shader_id, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        // vge::gfx_manager::draw_mesh(handle);
-        // model = glm::translate(glm::mat4(1.0f) ,glm::vec3(-1.0f,  1.0f, -1.0f));
-        // glUniformMatrix4fv(glGetUniformLocation(shader_id, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        // vge::gfx_manager::draw_mesh(handle);
-        // model = glm::translate(glm::mat4(1.0f) ,glm::vec3(1.0f,  -1.0f, -1.0f));
-        // glUniformMatrix4fv(glGetUniformLocation(shader_id, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        // vge::gfx_manager::draw_mesh(handle);
-        // model = glm::translate(glm::mat4(1.0f) ,glm::vec3(-1.0f,  -1.0f, -1.0f));
-        // glUniformMatrix4fv(glGetUniformLocation(shader_id, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        // vge::gfx_manager::draw_mesh(handle);
+            // Drawing
+            vge::gfx_manager::draw_mesh(handle2);
 
-        // Draw subsystems
+            model = glm::translate(glm::mat4(1.0f) ,glm::vec3(1.0f,  1.0f, -1.0f));
+            glUniformMatrix4fv(glGetUniformLocation(shader_id, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            vge::gfx_manager::draw_mesh(handle2);
+            model = glm::translate(glm::mat4(1.0f) ,glm::vec3(-1.0f,  1.0f, -1.0f));
+            glUniformMatrix4fv(glGetUniformLocation(shader_id, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            vge::gfx_manager::draw_mesh(handle2);
+            model = glm::translate(glm::mat4(1.0f) ,glm::vec3(1.0f,  -1.0f, -1.0f));
+            glUniformMatrix4fv(glGetUniformLocation(shader_id, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            vge::gfx_manager::draw_mesh(handle2);
+            model = glm::translate(glm::mat4(1.0f) ,glm::vec3(-1.0f,  -1.0f, -1.0f));
+            glUniformMatrix4fv(glGetUniformLocation(shader_id, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            vge::gfx_manager::draw_mesh(handle2);
+
+            // Draw subsystems
+        }
+
         vge::draw_debug_windows();
 
         //ImGui::ShowDemoWindow();
@@ -244,7 +208,6 @@ main(int argc, char** argv)
     }
 
     // Subsystem shutdown
-    vge::shutdown_profiler();
 
     //
     // glDeleteVertexArrays(1, &VAO);

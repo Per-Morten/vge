@@ -11,6 +11,9 @@ set(headers
 
     # TinyObj
     tiny_obj_loader/tiny_obj_loader.h
+
+    # Catch
+    catch/catch.h
 )
 
 set(source
@@ -43,6 +46,7 @@ target_include_directories(vge_third_party PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/imgui/examples"
     "${CMAKE_CURRENT_SOURCE_DIR}/stb"
     "${CMAKE_CURRENT_SOURCE_DIR}/tiny_obj_loader"
+    "${CMAKE_CURRENT_SOURCE_DIR}/catch"
 )
 
 add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLAD)

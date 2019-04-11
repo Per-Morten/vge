@@ -6,57 +6,97 @@
 #include <chrono>
 #include <cstring>
 
-namespace vge
+// TODO: Create a clock class.
+// TODO: Set a max for how many Profiling events we should keep.
+
+namespace VGE
 {
-    void initialize_profiler(vge::allocator& allocator) VGE_NOEXCEPT;
-    void shutdown_profiler() VGE_NOEXCEPT;
+    using ProfileTimePoint = std::chrono::high_resolution_clock::time_point;
 
-    // lane_id: The id indicating which lane/thread to assign this event to.
-    // duration: duration in ns.
-    void push_profile_event(int lane_id, char* filename, char* function, int line, int duration) VGE_NOEXCEPT;
-
-    void new_frame() VGE_NOEXCEPT;
-    void draw_profiler() VGE_NOEXCEPT;
-
-    namespace details
+    struct ProfileEvent
     {
-        struct vge_raii_profile
+        ProfileTimePoint Begin{};
+        ProfileTimePoint End{};
+        const char* Label{};
+        const char* Function{};
+        int Line{};
+
+        ProfileEvent() = default;
+        ProfileEvent(const char* label,
+                     const char* function,
+                     int line,
+                     ProfileTimePoint begin,
+                     ProfileTimePoint end)
+            : Begin(begin)
+            , End(end)
+            , Label(label)
+            , Function(function)
+            , Line(line)
+            {}
+    };
+
+    // TODO: Want a way to log profiling data to disk, so I can use the profiler in chrome.
+    struct Profiler
+    {
+        // Think of having init and shutdown functions
+        void PushProfileEvent(const ProfileEvent& event);
+
+        void BeginFrame();
+        void EndFrame();
+        void DrawProfiler();
+
+        // Members
+        // Temporary, find a better solution, or set off space for more.
+        constexpr static auto MaxEvents = 256;
+        constexpr static auto MaxFrames = 90;
+
+        // These should be aligned based on cacheline, to avoid false sharing.
+        ProfileEvent mEvents[VGE::Thread::MaxThreads][MaxEvents] = {};
+        int mEventsCount[VGE::Thread::MaxThreads]{};
+
+        ProfileTimePoint mFrameStart{};
+    };
+
+    inline Profiler gProfiler;
+
+    struct RAIIProfiler
+    {
+        RAIIProfiler(const char* label,
+                     const char* function,
+                     int line,
+                     Profiler* profiler = &gProfiler)
+            : Function(function)
+            , Line(line)
+            , Begin(std::chrono::high_resolution_clock::now())
+            , Receiver(profiler)
         {
-            using time_point = std::chrono::high_resolution_clock::time_point;
+            #ifdef WIN32
+            Label = std::strrchr(label, '\\');
+            #else
+            Label = std::strrchr(label, '/');
+            #endif
+            Label = (Label) ? Label + 1 : label;
+        }
 
-            time_point start;
-            time_point stop;
+        ~RAIIProfiler()
+        {
+            ProfileEvent e(Label, Function, Line, Begin, std::chrono::high_resolution_clock::now());
+            Receiver->PushProfileEvent(e);
+        }
 
-            const char* filename;
-            const char* function; // This does not necessarily work correctly, as __func__ is apparently not a macro, but rather a variable.
-                                  // So, look if this becomes an issue in the profiler.
-            int line;
-            int lane_id = 0;
+        ProfileTimePoint Begin;
+        const char* Label;
+        const char* Function;
+        Profiler* Receiver;
+        int Line;
+    };
 
-            vge_raii_profile(const char filename[], const char function[], int line)
-            {
-                #ifdef WIN32
-                this->filename = std::strrchr(filename, '\\');
-                #else
-                this->filename = std::strrchr(filename, '/');
-                #endif
-                this->filename++;
+    #define VGE_MACRO_APPEND_(a, b) a ## b
+    #define VGE_MACRO_APPEND(a, b) VGE_MACRO_APPEND_(a, b)
 
-                this->function = function;
-                this->line = line;
-                VGE_DEBUG("In VGE_RAII_PROFILE Constructor: %s, %s, %d", this->filename, function, line);
-            }
+    #define VGE_PROFILE() auto VGE_MACRO_APPEND(profiler, __LINE__) = VGE::RAIIProfiler(__FILE__, __func__, __LINE__)
+    #define VGE_PROFILE_LABEL(x) auto VGE_MACRO_APPEND(profiler, __LINE__) = VGE::RAIIProfiler((x), __func__, __LINE__)
 
-            ~vge_raii_profile()
-            {
-                VGE_DEBUG("In VGE_RAII_PROFILE Destructor");
-            }
-        };
-    }
 }
 
-#define VGE_MACRO_APPEND_(a, b) a ## b
-#define VGE_MACRO_APPEND(a, b) VGE_MACRO_APPEND_(a, b)
-
-#define VGE_PROFILE() auto VGE_MACRO_APPEND(profiler, __LINE__) = vge::details::vge_raii_profile(__FILE__, __func__, __LINE__)
 

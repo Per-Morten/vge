@@ -1,19 +1,20 @@
 #pragma once
 #include <vge_allocator.h>
 
-namespace vge
+namespace VGE
 {
-    class malloc_allocator
-        : public vge::allocator
+    class //[[deprecated("From now on all memory allocation should happen through an allocator")]]
+    MallocAllocator
+        : public VGE::Allocator
     {
     public:
-        using allocator::allocator;
+        MallocAllocator(const char* name [[maybe_unused]] ) {}
+        virtual ~MallocAllocator() {}
 
-        virtual void* allocate(int size) VGE_NOEXCEPT override;
-        virtual void deallocate(void* ptr) VGE_NOEXCEPT override;
-        virtual int allocated_size() VGE_NOEXCEPT override;
+        virtual void* Allocate(int size) VGE_NOEXCEPT override;
+        virtual void Deallocate(void* ptr) VGE_NOEXCEPT override;
+        virtual int AllocatedSize() const VGE_NOEXCEPT override;
+        virtual void Clear() VGE_NOEXCEPT {}
     };
-
-    inline malloc_allocator malloc("global_allocator");
 }
 

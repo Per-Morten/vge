@@ -21,6 +21,7 @@ vge_log(const char* type,
         const char* filepath,
         const char* func,
         const int line,
+        VGE::Thread::ThreadID thread_id,
         const char* fmt,
         ...)
 {
@@ -46,8 +47,9 @@ vge_log(const char* type,
     char* buff = g_log_table[g_log_idx];
     g_log_idx = (g_log_idx + 1) % log_table_size;
 
-    std::sprintf(buff, "[%-5s]: %-15s: %-25s:%4d: %s\n",
+    std::sprintf(buff, "[%-5s][thread: %d]: %-15s: %-25s:%4d: %s\n",
                  type,
+                 thread_id,
                  filename, func,
                  line, buffer);
 }
@@ -55,7 +57,7 @@ vge_log(const char* type,
 void
 vge::init_logger()
 {
-    auto handler = [](int sig, siginfo_t* si, void* unused)
+    auto handler = [](int sig, VGE_UNUSED siginfo_t* si, VGE_UNUSED void* unused)
     {
         // Check to see if we have wrapped around once
         // No need to do strlen, just check that the first spot isn't \0!
@@ -112,7 +114,7 @@ gl_debug_callback(GLenum source,
                   GLenum severity,
                   GLsizei length,
                   const GLchar *message,
-                  const void *userParam)
+                  VGE_UNUSED const void *userParam)
 {
     VGE_ASSERT((size_t)length < sizeof(gl_debug_msg::message), "Message: %s, does not fit in buffer", message);
 

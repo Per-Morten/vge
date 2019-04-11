@@ -21,6 +21,7 @@ set(VGE_STANDARD_FLAGS "${VGE_STANDARD_FLAGS}   \
                         -std=c++17              \
                         -Wall                   \
                         -Wextra                 \
+                        -Wno-int-to-pointer-cast \
                        "
 )
 
@@ -63,17 +64,16 @@ subdirs(
     third_party
 )
 
-if (${VGE_ENABLE_TESTS})
+if (${CMAKE_BUILD_TYPE} STREQUAL "tests")
     set(CMAKE_CXX_FLAGS
         "${CMAKE_CXX_FLAGS}         \
+         ${VGE_DEBUG_FLAGS}         \
         -UVGE_ASSERT_TERMINATE      \
-        -DVGE_ASSERT_ERRC           \
+        -DVGE_ASSERT_THROW          \
         "
     )
-endif()
-
-if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Test")
-
+    subdirs(tests)
+else()
     add_executable(main main.cpp)
 
     target_link_libraries(main
@@ -87,6 +87,7 @@ if (NOT ${CMAKE_BUILD_TYPE} STREQUAL "Test")
         vge_debug
         vge_third_party
         vge_gfx
+        vge_container
     )
 
     set_target_properties(main PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "$ENV{VGE_ROOT_DIR}")

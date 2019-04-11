@@ -25,4 +25,5 @@ target_link_libraries(vge_gfx
     vge_core
     vge_third_party
     vge_utility
+    vge_container
 )

@@ -3,3 +3,4 @@
 #include <vge_imgui.h>
 #include <vge_log.h>
 #include <vge_profiler.h>
+#include <vge_memory.h>

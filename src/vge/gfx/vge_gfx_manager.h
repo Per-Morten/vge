@@ -23,32 +23,32 @@ namespace vge
 
         // TODO: Create generational handle to be used here.
         // Will both help detecting "invalid references", and can also help making the system more typesafe.
-        using mesh_handle = int;
-        using shader_handle = int;
-        using texture_handle = int;
-        using program_id = GLuint;
-        using shader_id = GLuint;
-        using texture_id = GLuint;
+        using MeshHandle = int;
+        using ShaderHandle = int;
+        using TextureHandle = int;
+        using ProgramID = GLuint;
+        using ShaderID = GLuint;
+        using TextureID = GLuint;
 
         // Mesh Related
-        mesh_handle create_mesh();
-        void destroy_mesh(mesh_handle handle);
-        void set_mesh(mesh_handle handle, mesh_data data);
-        void draw_mesh(mesh_handle handle);
+        MeshHandle create_mesh();
+        void destroy_mesh(MeshHandle handle);
+        void set_mesh(MeshHandle handle, mesh_data data);
+        void draw_mesh(MeshHandle handle);
         // TODO: Need a way to get access to the different buffers on the GPU so I can directly map and work on them
 
         // Texture Related
         // TODO: Figure out this interface
-        texture_handle create_texture();
-        void load_texture(texture_handle handle, const char* filepath);
-        texture_id get_texture_id(texture_handle handle);
+        TextureHandle create_texture();
+        void load_texture(TextureHandle handle, const char* filepath);
+        TextureID get_texture_id(TextureHandle handle);
 
         // Shader related
         // TODO: Figure out this interface
-        shader_handle create_shader();
-        void attach_shader(shader_handle handle, const char* filepath, GLenum type);
-        void compile_and_link_shader(shader_handle handle);
-        program_id get_shader_id(shader_handle handle);
+        ShaderHandle create_shader();
+        void attach_shader(ShaderHandle handle, const char* filepath, GLenum type);
+        void compile_and_link_shader(ShaderHandle handle);
+        ProgramID get_shader_id(ShaderHandle handle);
 
         // Utility
         void draw_imgui_debug();
