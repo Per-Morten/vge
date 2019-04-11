@@ -7,7 +7,7 @@
 VGE::OBJAsset
 VGE::LoadOBJ(const char* filepath)
 {
-    // At a quick glance there doesn't seem to be anything in tinyobj that stops it from being abe to be parallelized.
+    // At a quick glance there doesn't seem to be anything in tinyobj that stops it from being able to be parallelized.
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;

@@ -1,6 +1,19 @@
 #include <vge_memory_manager.h>
 #include <vge_assert.h>
+#include <vge_global_allocator.h>
 #include <imgui.h>
+
+void
+VGE::MemoryManager::Init()
+{
+
+}
+
+VGE::Allocator*
+VGE::MemoryManager::GetDefaultAllocator()
+{
+    return &gGlobalAllocator;
+}
 
 void
 VGE::MemoryManager::RegisterAllocator(Allocator* allocator)

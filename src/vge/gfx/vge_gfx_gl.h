@@ -1,6 +1,6 @@
 #include <glad/glad.h>
 
-namespace vge::gfx
+namespace VGE::GFX
 {
-    const char* gl_enum_to_string(GLenum e);
+    const char* GLEnumToString(GLenum e);
 }

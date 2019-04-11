@@ -4,12 +4,13 @@
 #include <glm/glm.hpp>
 
 /// TODO: Refactor into vge::gfx namespace
-namespace vge
+namespace VGE
 {
-    // Should just be namespace, not a "class"
-    namespace gfx_manager
+    // Make it a struct or class, rather than namespace...
+    // I do actually hold some data. And might want to expose that for testing purposes.
+    struct GFXManager
     {
-        struct mesh_data
+        struct MeshData
         {
             std::string name;
             int vertex_count;
@@ -30,29 +31,39 @@ namespace vge
         using ShaderID = GLuint;
         using TextureID = GLuint;
 
+        void Init();
+
         // Mesh Related
-        MeshHandle create_mesh();
-        void destroy_mesh(MeshHandle handle);
-        void set_mesh(MeshHandle handle, mesh_data data);
-        void draw_mesh(MeshHandle handle);
+        MeshHandle CreateMesh();
+        void DestroyMesh(MeshHandle handle);
+        void SetMesh(MeshHandle handle, MeshData data);
+        void DrawMesh(MeshHandle handle);
         // TODO: Need a way to get access to the different buffers on the GPU so I can directly map and work on them
 
         // Texture Related
         // TODO: Figure out this interface
-        TextureHandle create_texture();
-        void load_texture(TextureHandle handle, const char* filepath);
-        TextureID get_texture_id(TextureHandle handle);
+        TextureHandle CreateTexture();
+        void LoadTexture(TextureHandle handle, const char* filepath);
+        TextureID GetTextureID(TextureHandle handle);
 
         // Shader related
         // TODO: Figure out this interface
-        ShaderHandle create_shader();
-        void attach_shader(ShaderHandle handle, const char* filepath, GLenum type);
-        void compile_and_link_shader(ShaderHandle handle);
-        ProgramID get_shader_id(ShaderHandle handle);
+        ShaderHandle CreateShader();
+        void AttachShader(ShaderHandle handle, const char* filepath, GLenum type);
+        void CompileAndLinkShader(ShaderHandle handle);
+        ProgramID GetShaderID(ShaderHandle handle);
 
-        // Utility
-        void draw_imgui_debug();
+        // Debugging
+        void DrawDebug();
 
         // Should have some sort of shutdown function?
+
+        // TOOD: Need to create some sort of "immediate mode" layer. For directly drawing vertices.
+        GLuint mDynamicVBO;
+
+        static constexpr auto DynamicVBOSize = (1 << 21); // 2 MB
+
     };
+
+    inline GFXManager gGfxManager;
 }

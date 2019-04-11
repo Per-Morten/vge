@@ -2,7 +2,7 @@
 #include <cstdio>
 
 const char*
-vge::gfx::gl_enum_to_string(GLenum e)
+VGE::GFX::GLEnumToString(GLenum e)
 {
     #define TO_STRING_GENERATOR(x) case x: return #x; break;
 

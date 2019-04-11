@@ -6,10 +6,14 @@ namespace VGE
 {
     struct MemoryManager
     {
+        void Init();
+        Allocator* GetDefaultAllocator();
+
         void RegisterAllocator(Allocator* allocator);
         void DeregisterAllocator(Allocator* allocator);
 
         void DrawDebug();
+
 
         // Currently, just limitting it to 256 allocators.
         static constexpr auto MaxAllocators = 256;

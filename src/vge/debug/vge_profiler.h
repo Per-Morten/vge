@@ -65,10 +65,10 @@ namespace VGE
                      const char* function,
                      int line,
                      Profiler* profiler = &gProfiler)
-            : Function(function)
-            , Line(line)
-            , Begin(std::chrono::high_resolution_clock::now())
+            : Begin(std::chrono::high_resolution_clock::now())
+            , Function(function)
             , Receiver(profiler)
+            , Line(line)
         {
             #ifdef WIN32
             Label = std::strrchr(label, '\\');

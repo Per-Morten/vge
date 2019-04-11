@@ -243,9 +243,9 @@ vge::draw_log_window()
                     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.000f, 0.700f, 1.000f, 1.0f));
 
                 ImGui::TextWrapped("[%s]: %s %s: %s",
-                            gfx::gl_enum_to_string(msg->source),
-                            gfx::gl_enum_to_string(msg->type),
-                            gfx::gl_enum_to_string(msg->severity),
+                            VGE::GFX::GLEnumToString(msg->source),
+                            VGE::GFX::GLEnumToString(msg->type),
+                            VGE::GFX::GLEnumToString(msg->severity),
                             msg->message);
                 if (ImGui::IsItemHovered())
                     ImGui::SetTooltip("msg id: %d", msg->id);

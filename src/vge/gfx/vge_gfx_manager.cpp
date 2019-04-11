@@ -31,16 +31,16 @@ struct mesh_gl_data
 // together with the VBO, EBO etc either.
 struct mesh_info
 {
-    vge::gfx_manager::MeshHandle handle;
-    vge::gfx_manager::mesh_data mesh_data;
+    VGE::GFXManager::MeshHandle handle;
+    VGE::GFXManager::MeshData mesh_data;
     mesh_gl_data gl_data;
 };
 
 static VGE::Array<mesh_info> g_mesh_table;
-static vge::gfx_manager::MeshHandle g_new_mesh_handle;
+static VGE::GFXManager::MeshHandle g_new_mesh_handle;
 
-vge::gfx_manager::MeshHandle
-vge::gfx_manager::create_mesh()
+VGE::GFXManager::MeshHandle
+VGE::GFXManager::CreateMesh()
 {
     auto NewPair = mesh_info();
     NewPair.handle = g_new_mesh_handle++;
@@ -49,8 +49,8 @@ vge::gfx_manager::create_mesh()
 }
 
 void
-vge::gfx_manager::set_mesh(vge::gfx_manager::MeshHandle handle,
-                           vge::gfx_manager::mesh_data data)
+VGE::GFXManager::SetMesh(MeshHandle handle,
+                         MeshData data)
 {
     auto itr = std::find_if(g_mesh_table.Begin(), g_mesh_table.End(),
                             [=](const auto& item)
@@ -96,7 +96,7 @@ vge::gfx_manager::set_mesh(vge::gfx_manager::MeshHandle handle,
 
 // TODO: This should be assumed to be async.
 void
-vge::gfx_manager::draw_mesh(vge::gfx_manager::MeshHandle handle)
+VGE::GFXManager::DrawMesh(VGE::GFXManager::MeshHandle handle)
 {
     auto itr = std::find_if(g_mesh_table.Begin(), g_mesh_table.End(),
                             [=](const auto& item)
@@ -111,8 +111,8 @@ vge::gfx_manager::draw_mesh(vge::gfx_manager::MeshHandle handle)
 ///////////////////////////////////////////////////////////
 struct texture_info
 {
-    vge::gfx_manager::TextureHandle handle;
-    vge::gfx_manager::TextureID texture_id;
+    VGE::GFXManager::TextureHandle handle;
+    VGE::GFXManager::TextureID texture_id;
 
     // TODO: Move this extended information into different places to make better use of cache etc.
     std::string filepath;
@@ -121,13 +121,13 @@ struct texture_info
     int height;
 };
 
-static vge::gfx_manager::TextureHandle g_new_texture_handle;
+static VGE::GFXManager::TextureHandle g_new_texture_handle;
 static VGE::Array<texture_info> g_texture_table;
 
 namespace local::texture
 {
     texture_info*
-    get_texture(vge::gfx_manager::TextureHandle handle)
+    get_texture(VGE::GFXManager::TextureHandle handle)
     {
         auto itr = std::find_if(g_texture_table.Begin(),
                                 g_texture_table.End(),
@@ -140,8 +140,8 @@ namespace local::texture
     }
 }
 
-vge::gfx_manager::TextureHandle
-vge::gfx_manager::create_texture()
+VGE::GFXManager::TextureHandle
+VGE::GFXManager::CreateTexture()
 {
     g_texture_table.PushBack({});
     auto& texture = g_texture_table.Back();
@@ -151,7 +151,7 @@ vge::gfx_manager::create_texture()
 }
 
 void
-vge::gfx_manager::load_texture(vge::gfx_manager::TextureHandle handle,
+VGE::GFXManager::LoadTexture(VGE::GFXManager::TextureHandle handle,
                                const char* filepath)
 {
     auto texture = local::texture::get_texture(handle);
@@ -185,8 +185,8 @@ vge::gfx_manager::load_texture(vge::gfx_manager::TextureHandle handle,
     stbi_image_free(data);
 }
 
-vge::gfx_manager::TextureID
-vge::gfx_manager::get_texture_id(vge::gfx_manager::TextureHandle handle)
+VGE::GFXManager::TextureID
+VGE::GFXManager::GetTextureID(VGE::GFXManager::TextureHandle handle)
 {
     return local::texture::get_texture(handle)->texture_id;
 }
@@ -196,8 +196,8 @@ vge::gfx_manager::get_texture_id(vge::gfx_manager::TextureHandle handle)
 ///////////////////////////////////////////////////////////
 struct program
 {
-    vge::gfx_manager::ShaderHandle handle;
-    vge::gfx_manager::ProgramID program_id;
+    VGE::GFXManager::ShaderHandle handle;
+    VGE::GFXManager::ProgramID program_id;
 };
 
 struct shader_source
@@ -210,7 +210,7 @@ struct shader_source
 };
 
 static VGE::Array<program> g_program_table;
-static vge::gfx_manager::ShaderHandle g_new_program_handle;
+static VGE::GFXManager::ShaderHandle g_new_program_handle;
 
 static VGE::Array<shader_source> g_shader_source_table;
 
@@ -268,7 +268,7 @@ namespace local::shader
     }
 
     program*
-    get_shader(vge::gfx_manager::ShaderHandle handle)
+    get_shader(VGE::GFXManager::ShaderHandle handle)
     {
         auto itr = std::find_if(g_program_table.Begin(), g_program_table.End(),
                                 [=](const auto& item)
@@ -292,8 +292,8 @@ namespace local::shader
     }
 } // namespace local::shader
 
-vge::gfx_manager::ShaderHandle
-vge::gfx_manager::create_shader()
+VGE::GFXManager::ShaderHandle
+VGE::GFXManager::CreateShader()
 {
     auto new_data = program();
     new_data.handle = g_new_program_handle++;
@@ -304,7 +304,7 @@ vge::gfx_manager::create_shader()
 }
 
 void
-vge::gfx_manager::attach_shader(vge::gfx_manager::ShaderHandle handle,
+VGE::GFXManager::AttachShader(VGE::GFXManager::ShaderHandle handle,
                                 const char* filepath,
                                 GLenum type)
 {
@@ -324,7 +324,7 @@ vge::gfx_manager::attach_shader(vge::gfx_manager::ShaderHandle handle,
 }
 
 void
-vge::gfx_manager::compile_and_link_shader(ShaderHandle handle)
+VGE::GFXManager::CompileAndLinkShader(ShaderHandle handle)
 {
     auto program = local::shader::get_shader(handle);
     VGE_ASSERT(program, "Did not find program with handle: %d", handle);
@@ -340,13 +340,25 @@ vge::gfx_manager::compile_and_link_shader(ShaderHandle handle)
     }
 }
 
-vge::gfx_manager::ProgramID
-vge::gfx_manager::get_shader_id(vge::gfx_manager::ShaderHandle handle)
+VGE::GFXManager::ProgramID
+VGE::GFXManager::GetShaderID(VGE::GFXManager::ShaderHandle handle)
 {
     auto program = local::shader::get_shader(handle);
     VGE_ASSERT(program, "Did not find program with handle: %d", handle);
     return program->program_id;
 }
+
+///////////////////////////////////////////////////////////
+/// New and Dynamic Drawing
+///////////////////////////////////////////////////////////
+void
+VGE::GFXManager::Init()
+{
+    glCreateBuffers(1, &mDynamicVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, mDynamicVBO);
+    glBufferData(GL_ARRAY_BUFFER, DynamicVBOSize, nullptr, GL_STREAM_DRAW);
+}
+
 
 ///////////////////////////////////////////////////////////
 /// Introspection related
@@ -453,7 +465,7 @@ namespace local::introspection
                 break;
 
             default:
-                ImGui::Text("%s has type %s, which isn't supported yet!", name, vge::gfx::gl_enum_to_string(type));
+                ImGui::Text("%s has type %s, which isn't supported yet!", name, VGE::GFX::GLEnumToString(type));
                 break;
         }
     }
@@ -462,7 +474,7 @@ namespace local::introspection
 }
 
 void
-vge::gfx_manager::draw_imgui_debug()
+VGE::GFXManager::DrawDebug()
 {
     if (ImGui::BeginTabBar("GraphicsTab"))
     {
@@ -604,7 +616,7 @@ vge::gfx_manager::draw_imgui_debug()
                             VGE_ASSERT(shader, "Source for shader: %u is nullptr", shader_id);
 
                             ImGui::Indent();
-                            auto string_type = gfx::gl_enum_to_string(shader->type);
+                            auto string_type = GFX::GLEnumToString(shader->type);
                             ImGui::PushID(string_type);
                             if (ImGui::CollapsingHeader(string_type))
                             {

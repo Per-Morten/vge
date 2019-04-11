@@ -43,6 +43,8 @@ int
 main(VGE_UNUSED int argc,
      VGE_UNUSED char** argv)
 {
+    using namespace VGE;
+
     vge::init_logger();
 
     if (!glfwInit())
@@ -90,8 +92,6 @@ main(VGE_UNUSED int argc,
         return ((VGE::MallocAllocator*)allocator)->Deallocate(ptr);
     };
 
-
-    VGE_DEBUG("%p", &imgui_dealloc);
     VGE::MallocAllocator imgui_allocator("imgui");
     ImGui::SetAllocatorFunctions(imgui_alloc, imgui_dealloc, &imgui_allocator);
 
@@ -102,46 +102,48 @@ main(VGE_UNUSED int argc,
 
     vge::init_imgui_style();
     vge::init_gl_logger();
-    //glEnable(GL_DEPTH_TEST);
+
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
     // Setup subsystems
+    gGfxManager.Init();
 
 
-    auto shader_handle = vge::gfx_manager::create_shader();
-    vge::gfx_manager::attach_shader(shader_handle, "resources/shaders/basic_shader.vs", GL_VERTEX_SHADER);
-    vge::gfx_manager::attach_shader(shader_handle, "resources/shaders/basic_shader.fs", GL_FRAGMENT_SHADER);
-    vge::gfx_manager::compile_and_link_shader(shader_handle);
-    auto shader_id = vge::gfx_manager::get_shader_id(shader_handle);
+    auto shader_handle = gGfxManager.CreateShader();
+
+    gGfxManager.AttachShader(shader_handle, "resources/shaders/basic_shader.vs", GL_VERTEX_SHADER);
+    gGfxManager.AttachShader(shader_handle, "resources/shaders/basic_shader.fs", GL_FRAGMENT_SHADER);
+    gGfxManager.CompileAndLinkShader(shader_handle);
+    auto shader_id = gGfxManager.GetShaderID(shader_handle);
 
 
-    auto tex_handle1 = vge::gfx_manager::create_texture();
-    vge::gfx_manager::load_texture(tex_handle1, "resources/textures/container.jpg");
-    auto tex_handle2 = vge::gfx_manager::create_texture();
-    vge::gfx_manager::load_texture(tex_handle2, "resources/textures/awesomeface.png");
+    auto tex_handle1 = gGfxManager.CreateTexture();
+    gGfxManager.LoadTexture(tex_handle1, "resources/textures/container.jpg");
+    auto tex_handle2 = gGfxManager.CreateTexture();
+    gGfxManager.LoadTexture(tex_handle2, "resources/textures/awesomeface.png");
 
     glUseProgram(shader_id);
     glUniform1i(glGetUniformLocation(shader_id, "u_texture0"), 0);
     glUniform1i(glGetUniformLocation(shader_id, "u_texture1"), 1);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, vge::gfx_manager::get_texture_id(tex_handle1));
+    glBindTexture(GL_TEXTURE_2D, gGfxManager.GetTextureID(tex_handle1));
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, vge::gfx_manager::get_texture_id(tex_handle2));
+    glBindTexture(GL_TEXTURE_2D, gGfxManager.GetTextureID(tex_handle2));
 
     auto object = VGE::LoadOBJ("resources/meshes/cube/cube.obj");
-    auto handle2 = vge::gfx_manager::create_mesh();
-    vge::gfx_manager::mesh_data data2;
+    auto handle2 = gGfxManager.CreateMesh();
+    VGE::GFXManager::MeshData data2;
     data2.name = "obj_file";
     data2.triangles = (GLuint*)object.indices.Data();
     data2.triangle_count = object.indices.Size();
     data2.vertex_count = object.positions.Size();
     data2.vertices = object.positions.Data();
     data2.uv0 = object.uv_coords.Data();
-    vge::gfx_manager::set_mesh(handle2, data2);
+    gGfxManager.SetMesh(handle2, data2);
 
-    auto third = vge::gfx_manager::create_mesh();
-    vge::gfx_manager::set_mesh(third, data2);
+    auto third = gGfxManager.CreateMesh();
+    gGfxManager.SetMesh(third, data2);
 
     glm::mat4 view          = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
     glm::mat4 projection    = glm::mat4(1.0f);
@@ -159,8 +161,6 @@ main(VGE_UNUSED int argc,
         // New Frame
         VGE::gProfiler.BeginFrame();
         {
-            VGE_PROFILE_LABEL("Main Loop");
-
             glfwPollEvents();
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
@@ -179,20 +179,20 @@ main(VGE_UNUSED int argc,
             glUniformMatrix4fv(glGetUniformLocation(shader_id, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
             // Drawing
-            vge::gfx_manager::draw_mesh(handle2);
+            gGfxManager.DrawMesh(handle2);
 
             model = glm::translate(glm::mat4(1.0f) ,glm::vec3(1.0f,  1.0f, -1.0f));
             glUniformMatrix4fv(glGetUniformLocation(shader_id, "model"), 1, GL_FALSE, glm::value_ptr(model));
-            vge::gfx_manager::draw_mesh(handle2);
+            gGfxManager.DrawMesh(handle2);
             model = glm::translate(glm::mat4(1.0f) ,glm::vec3(-1.0f,  1.0f, -1.0f));
             glUniformMatrix4fv(glGetUniformLocation(shader_id, "model"), 1, GL_FALSE, glm::value_ptr(model));
-            vge::gfx_manager::draw_mesh(handle2);
+            gGfxManager.DrawMesh(handle2);
             model = glm::translate(glm::mat4(1.0f) ,glm::vec3(1.0f,  -1.0f, -1.0f));
             glUniformMatrix4fv(glGetUniformLocation(shader_id, "model"), 1, GL_FALSE, glm::value_ptr(model));
-            vge::gfx_manager::draw_mesh(handle2);
+            gGfxManager.DrawMesh(handle2);
             model = glm::translate(glm::mat4(1.0f) ,glm::vec3(-1.0f,  -1.0f, -1.0f));
             glUniformMatrix4fv(glGetUniformLocation(shader_id, "model"), 1, GL_FALSE, glm::value_ptr(model));
-            vge::gfx_manager::draw_mesh(handle2);
+            gGfxManager.DrawMesh(handle2);
 
             // Draw subsystems
         }
