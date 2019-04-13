@@ -3,6 +3,8 @@ set(headers
     vge_gfx.h
     vge_gfx_gl.h
     vge_obj_loader.h
+    vge_color.h
+    vge_color.cpp
 )
 
 set(source

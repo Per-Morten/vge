@@ -354,11 +354,44 @@ VGE::GFXManager::GetShaderID(VGE::GFXManager::ShaderHandle handle)
 void
 VGE::GFXManager::Init()
 {
+    glGenVertexArrays(1, &mDynamicVAO);
+    glBindVertexArray(mDynamicVAO);
+
     glCreateBuffers(1, &mDynamicVBO);
     glBindBuffer(GL_ARRAY_BUFFER, mDynamicVBO);
     glBufferData(GL_ARRAY_BUFFER, DynamicVBOSize, nullptr, GL_STREAM_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
 }
 
+void
+VGE::GFXManager::DrawLine(glm::vec3 begin, glm::vec3 end, Color color)
+{
+    VGE_ASSERT(mDynamicVerticesCount + 2 < (int)MaxDynamicVertices, "Trying to add to many vertices");
+    mDynamicVertices[mDynamicVerticesCount].position = begin;
+    mDynamicVertices[mDynamicVerticesCount].color = color.raw;
+    mDynamicVerticesCount++;
+    mDynamicVertices[mDynamicVerticesCount].position = end;
+    mDynamicVertices[mDynamicVerticesCount].color = color.raw;
+    mDynamicVerticesCount++;
+}
+
+void
+VGE::GFXManager::RenderImmediate()
+{
+    auto buffer = glMapNamedBuffer(mDynamicVBO, GL_WRITE_ONLY);
+    std::memcpy(buffer, mDynamicVertices, mDynamicVerticesCount * sizeof(Vertex));
+    glUnmapNamedBuffer(mDynamicVBO);
+    glBindVertexArray(mDynamicVAO);
+    glDrawArrays(GL_LINES, 0, mDynamicVerticesCount);
+    glBindVertexArray(0);
+
+    mDynamicVerticesCount = 0;
+}
 
 ///////////////////////////////////////////////////////////
 /// Introspection related
@@ -637,9 +670,10 @@ VGE::GFXManager::DrawDebug()
                                         if (!success)
                                         {
                                             // Should probably also get the log length here, so I know how much space I need
+                                            // Need to get link status in here as well.
                                             GLchar info_log[512];
                                             glGetProgramInfoLog(program.program_id, sizeof(info_log), nullptr, info_log);
-                                            VGE_ERROR("Linking error while live editing shader %s", info_log);
+                                            VGE_WARN("Linking error while live editing shader %s", info_log);
                                         }
                                     }
                                 }

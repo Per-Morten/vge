@@ -10,6 +10,7 @@ set(source
     vge_imgui.cpp
     vge_log.cpp
     vge_profiler.cpp
+    vge_debug.cpp
 )
 
 add_library(vge_debug

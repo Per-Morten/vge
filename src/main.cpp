@@ -108,6 +108,13 @@ main(VGE_UNUSED int argc,
 
     // Setup subsystems
     gGfxManager.Init();
+    gDebug.Init();
+
+    auto debug_handle = gGfxManager.CreateShader();
+    gGfxManager.AttachShader(debug_handle, "resources/shaders/debug_shader.vs", GL_VERTEX_SHADER);
+    gGfxManager.AttachShader(debug_handle, "resources/shaders/debug_shader.fs", GL_FRAGMENT_SHADER);
+    gGfxManager.CompileAndLinkShader(debug_handle);
+    auto debug_id = gGfxManager.GetShaderID(debug_handle);
 
 
     auto shader_handle = gGfxManager.CreateShader();
@@ -166,6 +173,8 @@ main(VGE_UNUSED int argc,
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
 
+            glUseProgram(shader_id);
+
             // Clearing
             const auto clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
             glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
@@ -195,6 +204,20 @@ main(VGE_UNUSED int argc,
             gGfxManager.DrawMesh(handle2);
 
             // Draw subsystems
+
+            // gGfxManager.DrawLine(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+            // gGfxManager.DrawLine(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            // gGfxManager.DrawLine(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+
+            // hax for testing
+            gDebug.DrawAxes(glm::vec3(0.0f, 0.0f, 0.0f));
+            auto tmp = projection * view;
+            gDebug.RenderDebugLines(tmp);
+            // glProgramUniformMatrix4fv(debug_id, glGetUniformLocation(debug_id, "uVP"), 1, GL_FALSE, glm::value_ptr(tmp));
+            // glUseProgram(debug_id);
+            // gGfxManager.RenderImmediate();
+
         }
 
         vge::draw_debug_windows();

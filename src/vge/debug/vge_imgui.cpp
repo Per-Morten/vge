@@ -32,8 +32,8 @@ vge::draw_debug_windows()
     {
         {"Graphics", []{VGE::gGfxManager.DrawDebug();}, false},
         {"Extended Logging", draw_log_window, false},
-        {"Memory", []{VGE::gMemoryManager.DrawDebug();}, true},
-        {"Profiler", []{VGE::gProfiler.DrawProfiler();}, true},
+        {"Memory", []{VGE::gMemoryManager.DrawDebug();}, false},
+        {"Profiler", []{VGE::gProfiler.DrawProfiler();}, false},
     };
 
     static bool overlay = true;

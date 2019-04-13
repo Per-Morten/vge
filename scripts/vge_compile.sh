@@ -21,7 +21,7 @@ vge_internal_compile()
 
     if [[ "$(uname)" != "MINGW64_NT-10.0" ]];
     then
-        make -j8;
+        make -j4;
     fi
 }
 
