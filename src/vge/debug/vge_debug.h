@@ -22,7 +22,7 @@ namespace VGE
 
         void RenderDebugLines(glm::mat4 view_projection_matrix);
 
-        GFXManager::ShaderHandle mProgramHandle;
+        ShaderHandle mProgramHandle;
     };
 
     inline Debug gDebug;

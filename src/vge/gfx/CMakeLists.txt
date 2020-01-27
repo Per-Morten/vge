@@ -4,13 +4,15 @@ set(headers
     vge_gfx_gl.h
     vge_obj_loader.h
     vge_color.h
-    vge_color.cpp
+    vge_draw_cmd.h
+    vge_gfx_types.h
 )
 
 set(source
     vge_gfx_manager.cpp
     vge_gfx_gl.cpp
     vge_obj_loader.cpp
+    vge_color.cpp
 )
 
 add_library(vge_gfx

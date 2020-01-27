@@ -36,6 +36,7 @@ namespace VGE
     };
 
     // TODO: Want a way to log profiling data to disk, so I can use the profiler in chrome.
+    // Important: This is currently just a frame profiler. I.e. it doesn't work with stuff that takes more than one frame.
     struct Profiler
     {
         // Think of having init and shutdown functions

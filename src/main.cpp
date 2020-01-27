@@ -140,7 +140,7 @@ main(VGE_UNUSED int argc,
 
     auto object = VGE::LoadOBJ("resources/meshes/cube/cube.obj");
     auto handle2 = gGfxManager.CreateMesh();
-    VGE::GFXManager::MeshData data2;
+    VGE::MeshData data2;
     data2.name = "obj_file";
     data2.triangles = (GLuint*)object.indices.Data();
     data2.triangle_count = object.indices.Size();
@@ -168,6 +168,18 @@ main(VGE_UNUSED int argc,
         // New Frame
         VGE::gProfiler.BeginFrame();
         {
+                VGE_PROFILE();
+                std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                {
+                    VGE_PROFILE_LABEL("Func1");
+                    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                {
+                    VGE_PROFILE_LABEL("Func2");
+                    std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                }
+
             glfwPollEvents();
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
@@ -190,6 +202,19 @@ main(VGE_UNUSED int argc,
             // Drawing
             gGfxManager.DrawMesh(handle2);
 
+            StaticDrawCommand command;
+            command.Uniforms[0] = Uniform("view");
+            command.Uniforms[0].AsMat4 = view;
+            command.Uniforms[1] = Uniform("projection");
+            command.Uniforms[1].AsMat4 = projection;
+            command.Uniforms[2] = Uniform("model");
+            command.Uniforms[2].AsMat4 = model;
+            command.UniformCount = 3;
+            command.Mesh = handle2;
+            command.Shader = shader_handle;
+
+            gGfxManager.SubmitStaticDrawCommand(command);
+
             model = glm::translate(glm::mat4(1.0f) ,glm::vec3(1.0f,  1.0f, -1.0f));
             glUniformMatrix4fv(glGetUniformLocation(shader_id, "model"), 1, GL_FALSE, glm::value_ptr(model));
             gGfxManager.DrawMesh(handle2);
@@ -205,18 +230,11 @@ main(VGE_UNUSED int argc,
 
             // Draw subsystems
 
-            // gGfxManager.DrawLine(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-            // gGfxManager.DrawLine(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-            // gGfxManager.DrawLine(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-
 
             // hax for testing
             gDebug.DrawAxes(glm::vec3(0.0f, 0.0f, 0.0f));
             auto tmp = projection * view;
             gDebug.RenderDebugLines(tmp);
-            // glProgramUniformMatrix4fv(debug_id, glGetUniformLocation(debug_id, "uVP"), 1, GL_FALSE, glm::value_ptr(tmp));
-            // glUseProgram(debug_id);
-            // gGfxManager.RenderImmediate();
 
         }
 
@@ -224,7 +242,7 @@ main(VGE_UNUSED int argc,
 
         //ImGui::ShowDemoWindow();
 
-        // Rendering
+        // Want to finish render thread here.
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         glfwSwapBuffers(window);

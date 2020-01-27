@@ -2,6 +2,8 @@
 #include <vge_gfx_manager.h>
 #include <vge_gfx_gl.h>
 #include <vge_color.h>
+#include <vge_draw_cmd.h>
+#include <vge_gfx_types.h>
 
 
 // #include <tuple>

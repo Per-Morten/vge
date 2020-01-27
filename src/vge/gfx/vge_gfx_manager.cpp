@@ -31,15 +31,15 @@ struct mesh_gl_data
 // together with the VBO, EBO etc either.
 struct mesh_info
 {
-    VGE::GFXManager::MeshHandle handle;
-    VGE::GFXManager::MeshData mesh_data;
+    VGE::MeshHandle handle;
+    VGE::MeshData mesh_data;
     mesh_gl_data gl_data;
 };
 
 static VGE::Array<mesh_info> g_mesh_table;
-static VGE::GFXManager::MeshHandle g_new_mesh_handle;
+static VGE::MeshHandle g_new_mesh_handle;
 
-VGE::GFXManager::MeshHandle
+VGE::MeshHandle
 VGE::GFXManager::CreateMesh()
 {
     auto NewPair = mesh_info();
@@ -96,7 +96,7 @@ VGE::GFXManager::SetMesh(MeshHandle handle,
 
 // TODO: This should be assumed to be async.
 void
-VGE::GFXManager::DrawMesh(VGE::GFXManager::MeshHandle handle)
+VGE::GFXManager::DrawMesh(VGE::MeshHandle handle)
 {
     auto itr = std::find_if(g_mesh_table.Begin(), g_mesh_table.End(),
                             [=](const auto& item)
@@ -111,8 +111,8 @@ VGE::GFXManager::DrawMesh(VGE::GFXManager::MeshHandle handle)
 ///////////////////////////////////////////////////////////
 struct texture_info
 {
-    VGE::GFXManager::TextureHandle handle;
-    VGE::GFXManager::TextureID texture_id;
+    VGE::TextureHandle handle;
+    VGE::TextureID texture_id;
 
     // TODO: Move this extended information into different places to make better use of cache etc.
     std::string filepath;
@@ -121,13 +121,13 @@ struct texture_info
     int height;
 };
 
-static VGE::GFXManager::TextureHandle g_new_texture_handle;
+static VGE::TextureHandle g_new_texture_handle;
 static VGE::Array<texture_info> g_texture_table;
 
 namespace local::texture
 {
     texture_info*
-    get_texture(VGE::GFXManager::TextureHandle handle)
+    get_texture(VGE::TextureHandle handle)
     {
         auto itr = std::find_if(g_texture_table.Begin(),
                                 g_texture_table.End(),
@@ -140,7 +140,7 @@ namespace local::texture
     }
 }
 
-VGE::GFXManager::TextureHandle
+VGE::TextureHandle
 VGE::GFXManager::CreateTexture()
 {
     g_texture_table.PushBack({});
@@ -151,7 +151,7 @@ VGE::GFXManager::CreateTexture()
 }
 
 void
-VGE::GFXManager::LoadTexture(VGE::GFXManager::TextureHandle handle,
+VGE::GFXManager::LoadTexture(VGE::TextureHandle handle,
                                const char* filepath)
 {
     auto texture = local::texture::get_texture(handle);
@@ -185,8 +185,8 @@ VGE::GFXManager::LoadTexture(VGE::GFXManager::TextureHandle handle,
     stbi_image_free(data);
 }
 
-VGE::GFXManager::TextureID
-VGE::GFXManager::GetTextureID(VGE::GFXManager::TextureHandle handle)
+VGE::TextureID
+VGE::GFXManager::GetTextureID(VGE::TextureHandle handle)
 {
     return local::texture::get_texture(handle)->texture_id;
 }
@@ -196,8 +196,8 @@ VGE::GFXManager::GetTextureID(VGE::GFXManager::TextureHandle handle)
 ///////////////////////////////////////////////////////////
 struct program
 {
-    VGE::GFXManager::ShaderHandle handle;
-    VGE::GFXManager::ProgramID program_id;
+    VGE::ShaderHandle handle;
+    VGE::ProgramID program_id;
 };
 
 struct shader_source
@@ -210,7 +210,7 @@ struct shader_source
 };
 
 static VGE::Array<program> g_program_table;
-static VGE::GFXManager::ShaderHandle g_new_program_handle;
+static VGE::ShaderHandle g_new_program_handle;
 
 static VGE::Array<shader_source> g_shader_source_table;
 
@@ -268,7 +268,7 @@ namespace local::shader
     }
 
     program*
-    get_shader(VGE::GFXManager::ShaderHandle handle)
+    get_shader(VGE::ShaderHandle handle)
     {
         auto itr = std::find_if(g_program_table.Begin(), g_program_table.End(),
                                 [=](const auto& item)
@@ -292,7 +292,7 @@ namespace local::shader
     }
 } // namespace local::shader
 
-VGE::GFXManager::ShaderHandle
+VGE::ShaderHandle
 VGE::GFXManager::CreateShader()
 {
     auto new_data = program();
@@ -304,7 +304,7 @@ VGE::GFXManager::CreateShader()
 }
 
 void
-VGE::GFXManager::AttachShader(VGE::GFXManager::ShaderHandle handle,
+VGE::GFXManager::AttachShader(VGE::ShaderHandle handle,
                                 const char* filepath,
                                 GLenum type)
 {
@@ -340,8 +340,8 @@ VGE::GFXManager::CompileAndLinkShader(ShaderHandle handle)
     }
 }
 
-VGE::GFXManager::ProgramID
-VGE::GFXManager::GetShaderID(VGE::GFXManager::ShaderHandle handle)
+VGE::ProgramID
+VGE::GFXManager::GetShaderID(VGE::ShaderHandle handle)
 {
     auto program = local::shader::get_shader(handle);
     VGE_ASSERT(program, "Did not find program with handle: %d", handle);
@@ -391,6 +391,19 @@ VGE::GFXManager::RenderImmediate()
     glBindVertexArray(0);
 
     mDynamicVerticesCount = 0;
+}
+
+void
+VGE::GFXManager::SubmitStaticDrawCommand(const StaticDrawCommand& command)
+{
+    VGE_ASSERT(mStaticCommandsCount < (int)MaxStaticDrawCommands, "Trying to add to many static draw commands");
+    //mStaticCommands[mStaticCommandsCount++] = command;
+}
+
+void
+VGE::GFXManager::RenderStatic()
+{
+
 }
 
 ///////////////////////////////////////////////////////////
